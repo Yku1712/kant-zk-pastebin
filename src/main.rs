@@ -511,17 +511,6 @@ fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
     }
     Ok(())
 }
-    match path {
-        Some("-") | None => {
-            let mut content = String::new();
-            io::stdin()
-                .read_to_string(&mut content)
-                .map_err(|e| e.to_string())?;
-            Ok(content)
-        }
-        Some(path) => fs::read_to_string(path).map_err(|e| e.to_string()),
-    }
-}
 
 fn to_split_unit(value: CliUnit) -> SplitUnit {
     match value {
