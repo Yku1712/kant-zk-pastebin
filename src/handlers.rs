@@ -4562,7 +4562,7 @@ pub async fn archive_preview(path: web::Path<(String, usize)>) -> Result<HttpRes
             "path": entry.path,
             "size": entry.size,
             "content": entry.content.as_deref().unwrap_or(""),
-            "is_text": entry.content.is_some(),
+            "is_text": entry.is_text(),
         }))),
         None => {
             Ok(HttpResponse::NotFound().json(serde_json::json!({"error": "Index out of range"})))

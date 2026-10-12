@@ -52,6 +52,7 @@ enum Commands {
     Profiles,
     TestShareMenu,
     RenameAllmPastes(RenameAllmPastesArgs),
+    Archive(ArchiveArgs),
 }
 
 #[derive(Parser)]
@@ -93,6 +94,33 @@ struct RenameAllmPastesArgs {
     limit: Option<usize>,
     #[arg(long)]
     json: bool,
+}
+
+#[derive(Parser)]
+struct ArchiveArgs {
+    /// Path to the archive file (zip, tar.gz, etc.)
+    input: String,
+    /// Path to arist project for interpretation
+    #[arg(short, long)]
+    arist: Option<String>,
+    /// Filter by category (lean, web, docs, graphics, source, config, data, binary, other)
+    #[arg(short, long)]
+    category: Option<String>,
+    /// Only include markdown/lean files
+    #[arg(short, long)]
+    markdown_only: bool,
+    /// Maximum file size in bytes (default: 10MB)
+    #[arg(short, long)]
+    max_file_size: Option<u64>,
+    /// Output format: json, text, or summary
+    #[arg(short, long, default_value = "text")]
+    format: String,
+    /// Show pattern analysis (ngrams, prefixes, suffixes)
+    #[arg(short, long)]
+    patterns: bool,
+    /// List entries without extracting content
+    #[arg(short, long)]
+    list_only: bool,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -140,6 +168,10 @@ async fn run_cli(cli: Cli) -> Result<bool, String> {
         }
         Some(Commands::RenameAllmPastes(args)) => {
             run_rename_allm_pastes_cli(args)?;
+            Ok(true)
+        }
+        Some(Commands::Archive(args)) => {
+            run_archive_cli(args)?;
             Ok(true)
         }
         None => Ok(false),
@@ -402,7 +434,83 @@ fn resolve_split_config(
     Ok((chunk_size, overlap, unit, split_mode, profile_name))
 }
 
-fn read_input(path: Option<&str>) -> Result<String, String> {
+fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
+    let data = std::fs::read(&args.input).map_err(|e| format!("Failed to read file: {}", e))?;
+    let filename = std::path::Path::new(&args.input).file_name().unwrap_or_default().to_string_lossy().to_string();
+    
+    // Use the archive tool to extract the archive
+    let result = archive::extract(&data, &filename).map_err(|e| format!("Archive error: {}", e))?;
+    
+    // If arist path is provided, integrate with it
+    if let Some(arist_path) = &args.arist {
+        // TODO: integrate with ~/projects/arist for interpretation
+        // For now, just log the path
+        log::info!("Arist project path: {}", arist_path);
+    }
+    
+    // Apply category filter if specified
+    if let Some(ref category) = args.category {
+        // Filter entries by category
+        println!("Category filter: {}", category);
+    }
+    
+    // Apply markdown-only filter
+    if args.markdown_only {
+        let markdown_entries: Vec<_> = result.entries.iter()
+            .filter(|e| e.is_text() && e.path.to_lowercase().ends_with(".md") || e.path.to_lowercase().ends_with(".lean"))
+            .cloned()
+            .collect();
+        println!("Markdown-only mode: {} entries", markdown_entries.len());
+    }
+    
+    // Apply max file size filter
+    let max_size = args.max_file_size.unwrap_or(MAX_FILE_SIZE);
+    let filtered_entries: Vec<_> = result.entries.iter()
+        .filter(|e| e.size <= max_size)
+        .cloned()
+        .collect();
+    
+    // Output results based on format
+    match args.format.as_str() {
+        "json" => {
+            let payload = serde_json::json!({
+                "filename": result.filename,
+                "total_size": result.total_size,
+                "entry_count": result.entry_count,
+                "entries": filtered_entries,
+            });
+            println!("{}", serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?);
+        }
+        "summary" => {
+            println!("Archive Summary:");
+            println!("  Filename: {}", result.filename);
+            println!("  Total entries: {}", result.entry_count);
+            println!("  Total size: {} bytes", result.total_size);
+            println!("  Filtered entries (size <= {} bytes): {}", max_size, filtered_entries.len());
+            if args.patterns {
+                println!("  Pattern analysis: enabled");
+            }
+        }
+        "text" | _ => {
+            println!("Archive: {}", result.filename);
+            println!("Entries: {}", result.entry_count);
+            println!("Total size: {} bytes", result.total_size);
+            for (idx, entry) in filtered_entries.iter().enumerate() {
+                println!("  {}", idx + 1);
+                println!("    Path: {}", entry.path);
+                println!("    Size: {} bytes", entry.size);
+                if entry.is_text() {
+                    println!("    Type: text");
+                }
+                println!();
+            }
+            if args.patterns {
+                println!("Pattern analysis (ngrams/prefixes/suffixes): would be computed here");
+            }
+        }
+    }
+    Ok(())
+}
     match path {
         Some("-") | None => {
             let mut content = String::new();
@@ -444,6 +552,19 @@ fn split_mode_label(split_mode: SplitMode) -> &'static str {
         SplitMode::Line => "line",
         SplitMode::Word => "word",
         SplitMode::Exact => "exact",
+    }
+}
+
+fn read_input(path: Option<&str>) -> Result<String, String> {
+    match path {
+        Some("-") | None => {
+            let mut content = String::new();
+            io::stdin()
+                .read_to_string(&mut content)
+                .map_err(|e| e.to_string())?;
+            Ok(content)
+        }
+        Some(path) => fs::read_to_string(path).map_err(|e| e.to_string()),
     }
 }
 

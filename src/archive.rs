@@ -13,8 +13,16 @@ pub struct ArchiveEntry {
 }
 
 impl ArchiveEntry {
-    /// Check if this entry is a text file (based on content or extension)
+    /// Check if this entry is a text file (based on extension or content)
     pub fn is_text(&self) -> bool {
+        // Check extension FIRST - known text extensions are always text
+        let path_lower = self.path.to_lowercase();
+        let text_exts = [".md", ".txt", ".lean", ".tex", ".org", ".html", ".htm", ".css", ".js", ".rs", ".py", ".json", ".yaml", ".yml", ".toml", ".xml", ".csv"];
+        if text_exts.iter().any(|ext| path_lower.ends_with(ext)) {
+            return true;
+        }
+        
+        // Fall back to content analysis for unknown extensions
         if let Some(ref content) = self.content {
             // Check if content looks like text
             let printable = content
@@ -24,10 +32,7 @@ impl ArchiveEntry {
             let total = content.len().max(1);
             printable * 100 / total > 90
         } else {
-            // Check extension
-            let path_lower = self.path.to_lowercase();
-            let text_exts = [".md", ".txt", ".lean", ".tex", ".org", ".html", ".htm", ".css", ".js", ".rs", ".py", ".json", ".yaml", ".yml", ".toml", ".xml", ".csv"];
-            text_exts.iter().any(|ext| path_lower.ends_with(ext))
+            false
         }
     }
 }
@@ -161,6 +166,18 @@ fn extract_single_compressed<D: Decoder>(
         w.iter()
             .all(|&b| b.is_ascii_graphic() || b == b'\n' || b == b'\r' || b == b'\t' || b == b' ')
     }) || content.is_empty();
+
+    // After decompression, check if the result is actually a tar archive
+    // (tar magic bytes at offset 257: "ustar"). If so, recursively extract.
+    if content.len() >= 262 && &content[257..262] == b"ustar" {
+        // The decompressed content is a tar archive — extract it recursively
+        let tar_filename = filename
+            .trim_end_matches(".gz")
+            .trim_end_matches(".bz2")
+            .trim_end_matches(".xz")
+            .to_string();
+        return extract_tar_from_reader(std::io::Cursor::new(content), &tar_filename);
+    }
 
     let entry_content = if is_text {
         Some(String::from_utf8_lossy(&content).to_string())
