@@ -1,4 +1,4 @@
-use kant_pastebin::archive::{extract, ArchiveEntry, ArchiveResult};
+use kant_pastebin::archive::{extract, ArchiveResult};
 use std::collections::HashMap;
 use std::env;
 use std::fs;

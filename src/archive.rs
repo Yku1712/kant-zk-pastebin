@@ -471,3 +471,85 @@ fn guess_is_text(buf: &[u8]) -> bool {
         .count();
     printable > (buf.len() * 9 / 10)
 }
+/// Extract all files of a specific category from an archive
+pub fn extract_by_category(data: &[u8], filename: &str, category: &str) -> Result<Vec<ArchiveEntry>, String> {
+    let result = extract(data, filename)?;
+    let filtered: Vec<ArchiveEntry> = result.entries
+        .into_iter()
+        .filter(|e| categorize_by_extension(&e.path) == category)
+        .collect();
+    Ok(filtered)
+}
+
+/// Extract all Lean files (.lean) from an archive
+pub fn extract_lean_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "lean")
+}
+
+/// Extract all Markdown files (.md, .txt, .tex, .org) from an archive
+pub fn extract_markdown_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "markdown")
+}
+
+/// Extract all SVG files from an archive
+pub fn extract_svg_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "svg")
+}
+
+/// Extract all web files (HTML, CSS, JS) from an archive
+pub fn extract_web_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "web")
+}
+
+/// Extract all GIF files from an archive
+pub fn extract_gif_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "gif")
+}
+
+/// Extract all graphics files (PNG, JPG, SVG, GIF, WebP) from an archive
+pub fn extract_graphics_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "graphics")
+}
+
+/// Extract all source code files from an archive
+pub fn extract_source_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "source")
+}
+
+/// Extract all data files (JSON, CSV, YAML, TOML, XML) from an archive
+pub fn extract_data_files(data: &[u8], filename: &str) -> Result<Vec<ArchiveEntry>, String> {
+    extract_by_category(data, filename, "data")
+}
+
+/// Categorize a file by its extension
+pub fn categorize_by_extension(path: &str) -> &'static str {
+    let lower = path.to_lowercase();
+    if lower.ends_with(".lean") {
+        return "lean";
+    }
+    if lower.ends_with(".md") || lower.ends_with(".txt") || lower.ends_with(".tex") || lower.ends_with(".org") {
+        return "markdown";
+    }
+    if lower.ends_with(".svg") {
+        return "svg";
+    }
+    if lower.ends_with(".gif") {
+        return "gif";
+    }
+    if lower.ends_with(".html") || lower.ends_with(".htm") || lower.ends_with(".css") || lower.ends_with(".js") || lower.ends_with(".ts") || lower.ends_with(".jsx") || lower.ends_with(".tsx") {
+        return "web";
+    }
+    if lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".webp") || lower.ends_with(".svg") || lower.ends_with(".gif") {
+        return "graphics";
+    }
+    if lower.ends_with(".rs") || lower.ends_with(".py") || lower.ends_with(".go") || lower.ends_with(".java") || lower.ends_with(".cpp") || lower.ends_with(".c") || lower.ends_with(".h") || lower.ends_with(".hpp") || lower.ends_with(".js") || lower.ends_with(".ts") {
+        return "source";
+    }
+    if lower.ends_with(".json") || lower.ends_with(".csv") || lower.ends_with(".yaml") || lower.ends_with(".yml") || lower.ends_with(".toml") || lower.ends_with(".xml") {
+        return "data";
+    }
+    if lower.ends_with(".bin") || lower.ends_with(".exe") || lower.ends_with(".so") || lower.ends_with(".dll") || lower.ends_with(".dylib") {
+        return "binary";
+    }
+    "other"
+}
