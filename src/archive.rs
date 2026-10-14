@@ -59,7 +59,7 @@ const MARKDOWN_EXTENSIONS: &[&str] = &[
 /// Excluded file extensions (svg, json, etc.)
 const EXCLUDED_EXTENSIONS: &[&str] = &[".svg", ".json"];
 /// Maximum file size in bytes (0 = no limit)
-const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024; // 110MB
+pub const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024; // 110MB
 
 /// Detect format from filename extension and extract
 pub fn extract(data: &[u8], filename: &str) -> Result<ArchiveResult, String> {

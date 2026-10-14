@@ -432,6 +432,8 @@ fn resolve_split_config(
     }
     if let Some(value) = args.split_mode {
         split_mode = to_split_mode(value);
+}
+
 fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
     let data = std::fs::read(&args.input).map_err(|e| format!("Failed to read file: {}", e))?;
     let filename = std::path::Path::new(&args.input).file_name().unwrap_or_default().to_string_lossy().to_string();
