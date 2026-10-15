@@ -20,7 +20,7 @@ use sha2::{Digest, Sha256};
 use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::Arc;
-use std::{collections::HashMap, env, fs};
+use std::{collections::HashMap, env, fs, sync::Mutex};
 
 // ─── Full error capture — saves replayable test case ───────────────
 /// Captures the full request details on failure and writes a replayable
@@ -3979,8 +3979,6 @@ pub async fn run_plugin(
 // ═════════════════════════════════════════════════════════════════════
 
 /// Temporary in-memory storage for extracted archives keyed by session ID.
-use std::sync::Mutex;
-
 lazy_static::lazy_static! {
     static ref ARCHIVE_STORE: Mutex<HashMap<String, crate::archive::ArchiveResult>> =
         Mutex::new(HashMap::new());
