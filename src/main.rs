@@ -121,440 +121,6 @@ struct ArchiveArgs {
     /// List entries without extracting content
     #[arg(short, long)]
     list_only: bool,
-    /// Apply split-by-category mode
-    #[arg(short, long)]
-    split: bool,
-}
-
-#[derive(Clone, Copy, ValueEnum)]
-enum CliUnit {
-    Byte,
-    Word,
-    Token,
-}
-
-#[derive(Clone, Copy, ValueEnum)]
-enum CliSplitMode {
-    Line,
-    Word,
-    Exact,
-}
-
-#[derive(OpenApi)]
-#[openapi(
-    paths(handlers::create_paste, handlers::get_paste, handlers::browse),
-    components(schemas(model::Paste, model::Response))
-)]
-struct ApiDoc;
-
-async fn run_cli(cli: Cli) -> Result<bool, String> {
-    match cli.command {
-        Some(Commands::Split(args)) => {
-            run_split_cli(args)?;
-            Ok(true)
-        }
-        Some(Commands::SplitUrl(args)) => {
-            run_split_url_cli(args).await?;
-            Ok(true)
-        }
-        Some(Commands::Profiles) => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&SplitProfile::presets()).map_err(|e| e.to_string())?
-            );
-            Ok(true)
-        }
-        Some(Commands::TestShareMenu) => {
-            share::run_share_menu_test()?;
-            println!("share menu test passed");
-            Ok(true)
-        }
-        Some(Commands::RenameAllmPastes(args)) => {
-            run_rename_allm_pastes_cli(args)?;
-            Ok(true)
-        }
-        Some(Commands::Archive(args)) => {
-            run_archive_cli(args)?;
-            Ok(true)
-        }
-        None => Ok(false),
-    }
-}
-
-fn run_split_cli(args: SplitArgs) -> Result<(), String> {
-    let content = read_input(args.input.as_deref())?;
-    print_mem("after read_input");
-    if content.trim().is_empty() {
-        return Err("empty input".to_string());
-    }
-
-    let (chunk_size, overlap, unit, split_mode, profile_name) = resolve_split_config(&args)?;
-    print_mem("after resolve_split_config");
-    let chunks = splitter::split_text(&content, chunk_size, unit, split_mode);
-    let overlapped = splitter::apply_overlap(chunks, overlap, unit, split_mode);
-
-    if args.json {
-        let payload = serde_json::json!({
-            "chunks": overlapped.len(),
-            "chunk_size": chunk_size,
-            "overlap": overlap,
-            "unit": serde_json::to_value(unit).map_err(|e| e.to_string())?,
-            "split_mode": serde_json::to_value(split_mode).map_err(|e| e.to_string())?,
-            "profile": profile_name,
-            "total_size": content.len(),
-            "word_count": crate::splitter::count_words(&content),
-            "estimated_tokens": crate::splitter::estimate_tokens(&content),
-            "contents": overlapped,
-        });
-        print_mem("after build json payload");
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?
-        );
-    } else {
-        println!(
-            "unit: {} | chunk_size: {} | overlap: {} | split_mode: {} | profile: {} | chunks: {} | words: {} | est_tokens: {}",
-            unit_label(unit),
-            chunk_size,
-            overlap,
-            split_mode_label(split_mode),
-            profile_name.as_deref().unwrap_or("custom"),
-            overlapped.len(),
-            crate::splitter::count_words(&content),
-            crate::splitter::estimate_tokens(&content)
-        );
-        for (idx, chunk) in overlapped.iter().enumerate() {
-            println!("\n===== chunk {} / {} =====", idx + 1, overlapped.len());
-            print!("{}", chunk);
-            if !chunk.ends_with('\n') {
-                println!();
-            }
-        }
-    }
-
-    print_mem("before return");
-    Ok(())
-}
-
-fn print_mem(label: &str) {
-    let rss_kb = std::fs::read_to_string("/proc/self/status")
-        .ok()
-        .and_then(|status| {
-            status
-                .lines()
-                .find(|line| line.starts_with("VmRSS:"))
-                .and_then(|line| line.split_whitespace().nth(1))
-                .and_then(|value| value.parse::<usize>().ok())
-        });
-
-    if let Some(rss_kb) = rss_kb {
-        eprintln!("mem {}: {} KB", label, rss_kb);
-    }
-}
-
-fn run_rename_allm_pastes_cli(args: RenameAllmPastesArgs) -> Result<(), String> {
-    let options = rename::RenameOptions {
-        uucp_dir: args.uucp_dir.unwrap_or_else(rename::default_uucp_dir),
-        apply: args.apply,
-        rename_files: args.rename_files,
-        limit: args.limit,
-    };
-    let report = rename::rename_allm_pastes(&options)?;
-
-    if args.json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?
-        );
-        return Ok(());
-    }
-
-    println!(
-        "allm rename: total={} renamed={} skipped={} errors={}",
-        report.total,
-        report.renamed,
-        report.skipped,
-        report.errors.len()
-    );
-    if !report.errors.is_empty() {
-        for error in report.errors.iter().take(20) {
-            eprintln!("error {} {}: {}", error.id, error.filename, error.error);
-        }
-    }
-    for item in report.items.iter().take(20) {
-        println!(
-            "{}: {} -> {} | {} | {} files | {}",
-            if item.applied { "applied" } else { "planned" },
-            item.old_title,
-            item.title,
-            item.old_filename,
-            item.selected_files,
-            item.description
-        );
-    }
-    if report.items.len() > 20 {
-        println!("... {} more", report.items.len() - 20);
-    }
-
-    Ok(())
-}
-
-async fn run_split_url_cli(args: SplitUrlArgs) -> Result<(), String> {
-    let raw_url = raw_url_from_split_url(&args.url)
-        .ok_or_else(|| "could not derive /raw/ URL from split URL".to_string())?;
-    let base_url = base_url_from_split_url(&args.url)
-        .ok_or_else(|| "could not derive API base URL from split URL".to_string())?;
-    let content = reqwest::get(&raw_url)
-        .await
-        .map_err(|e| e.to_string())?
-        .error_for_status()
-        .map_err(|e| e.to_string())?
-        .text()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if content.trim().is_empty() {
-        return Err("empty paste content".to_string());
-    }
-
-    let profile = args.profile.unwrap_or_else(|| "notebooklm".to_string());
-    let api_url = format!("{}/api/split", base_url.trim_end_matches('/'));
-    let payload: serde_json::Value = reqwest::Client::new()
-        .post(&api_url)
-        .json(&serde_json::json!({
-            "profile": profile,
-            "content": content,
-        }))
-        .send()
-        .await
-        .map_err(|e| e.to_string())?
-        .error_for_status()
-        .map_err(|e| e.to_string())?
-        .json()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    if args.json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?
-        );
-    } else {
-        let chunks = payload
-            .get("chunks")
-            .and_then(|v| v.as_u64())
-            .unwrap_or_default();
-        let words = payload
-            .get("word_count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or_default();
-        let tokens = payload
-            .get("estimated_tokens")
-            .and_then(|v| v.as_u64())
-            .unwrap_or_default();
-        println!(
-            "split-url: {} | raw: {} | api: {} | chunks: {} | words: {} | est_tokens: {}",
-            args.url, raw_url, api_url, chunks, words, tokens
-        );
-        if let Some(contents) = payload.get("contents").and_then(|v| v.as_array()) {
-            for (idx, chunk) in contents.iter().take(3).enumerate() {
-                let text = chunk.as_str().unwrap_or_default();
-                println!("\n===== chunk {} / {} =====", idx + 1, chunks);
-                println!("{}", text.chars().take(1000).collect::<String>());
-                if text.chars().count() > 1000 {
-                    println!("… truncated");
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
-
-fn raw_url_from_split_url(url: &str) -> Option<String> {
-    let id = paste_id_from_split_url(url)?;
-    let path_start = url.find("/pastebin/")?;
-    let origin = &url[..path_start];
-    Some(format!("{}/pastebin/raw/{}", origin, id))
-}
-
-fn base_url_from_split_url(url: &str) -> Option<String> {
-    let path_start = url.find("/pastebin/")?;
-    Some(format!("{}/pastebin", &url[..path_start]))
-}
-
-fn paste_id_from_split_url(url: &str) -> Option<String> {
-    let path = url.split('?').next()?;
-    let parts: Vec<&str> = path.trim_end_matches('/').split('/').collect();
-    if parts.len() >= 4 && parts[parts.len() - 1] == "split" {
-        Some(parts[parts.len() - 2].to_string())
-    } else if parts.len() >= 3 && parts[parts.len() - 2] == "paste" {
-        Some(parts[parts.len() - 1].to_string())
-    } else {
-        None
-    }
-}
-
-fn resolve_split_config(
-    args: &SplitArgs,
-) -> Result<(usize, usize, SplitUnit, SplitMode, Option<String>), String> {
-    let (mut chunk_size, mut overlap, mut unit, mut split_mode, profile_name) =
-        if let Some(name) = args.profile.as_deref() {
-            let profile = SplitProfile::find_preset(name)
-                .ok_or_else(|| format!("unknown profile: {}", name))?;
-            (
-                profile.chunk_size,
-                profile.overlap,
-                profile.unit,
-                profile.split_mode,
-                Some(name.to_string()),
-            )
-        } else {
-            (
-                args.chunk_size.unwrap_or(102_400),
-                args.overlap.unwrap_or(0),
-                args.unit.map(to_split_unit).unwrap_or(SplitUnit::Byte),
-                args.split_mode
-                    .map(to_split_mode)
-                    .unwrap_or(SplitMode::Word),
-                None,
-            )
-        };
-
-    if let Some(value) = args.chunk_size {
-        chunk_size = value;
-    }
-    if let Some(value) = args.overlap {
-        overlap = value;
-    }
-    if let Some(value) = args.unit {
-        unit = to_split_unit(value);
-    }
-    if let Some(value) = args.split_mode {
-        split_mode = to_split_mode(value);
-}
-
-fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
-    let data = std::fs::read(&args.input).map_err(|e| format!("Failed to read file: {}", e))?;
-    let filename = std::path::Path::new(&args.input).file_name().unwrap_or_default().to_string_lossy().to_string();
-
-    // Use the archive tool to extract the archive
-    let result = crate::archive::extract(&data, &filename).map_err(|e| format!("Archive error: {}", e))?;
-
-    // If arist path is provided, integrate with it
-    if let Some(arist_path) = &args.arist {
-        // TODO: integrate with ~/projects/arist for interpretation
-        // For now, just log the path
-        log::info!("Arist project path: {}", arist_path);
-    }
-
-    // Handle split mode - extract all categories separately
-    if args.split {
-        let categories = ["lean", "markdown", "svg", "web", "gif", "graphics", "source", "data", "binary", "other"];
-        let mut any_extracted = false;
-
-        for cat in &categories {
-            let extracted = crate::archive::extract_by_category(&data, &filename, cat);
-            match extracted {
-                Ok(entries) if !entries.is_empty() => {
-                    any_extracted = true;
-                    println!("\n--- {} ({} files) ---", cat, entries.len());
-                    for entry in &entries {
-                        println!("  {}", entry.path);
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        if !any_extracted {
-            eprintln!("No files found matching any category in the archive.");
-        }
-        return Ok(());
-    }
-
-    // Apply category filter if specified
-    let category_filter = args.category.clone();
-    
-    // Apply markdown-only filter
-    let markdown_only = args.markdown_only;
-    
-    // Apply max file size filter
-    let max_size = args.max_file_size.unwrap_or(crate::archive::MAX_FILE_SIZE);
-    
-    // Start with all entries, then apply filters
-    let mut filtered_entries: Vec<&crate::archive::ArchiveEntry> = result.entries.iter().collect();
-    
-    // Apply category filter
-    if let Some(ref category) = category_filter {
-        filtered_entries.retain(|e| crate::archive::categorize_by_extension(&e.path) == category);
-    }
-    
-    // Apply markdown-only filter
-    if markdown_only {
-        filtered_entries.retain(|e| e.is_text() && (e.path.to_lowercase().ends_with(".md") || e.path.to_lowercase().ends_with(".lean")));
-    }
-    
-    // Apply max file size filter
-    filtered_entries.retain(|e| e.size <= max_size);
-    
-    // Output results based on format
-    match args.format.as_str() {
-        "json" => {
-            let payload = serde_json::json!({
-                "filename": result.filename,
-                "total_size": result.total_size,
-                "entry_count": result.entry_count,
-                "entries": filtered_entries,
-            });
-            println!("{}", serde_json::to_string_pretty(&payload).map_err(|e| e.to_string())?);
-        }
-        "summary" => {
-            println!("Archive Summary:");
-            println!("  Filename: {}", result.filename);
-            println!("  Total entries: {}", result.entry_count);
-            println!("  Total size: {} bytes", result.total_size);
-            println!("  Filtered entries (size <= {} bytes): {}", max_size, filtered_entries.len());
-            if args.patterns {
-                println!("  Pattern analysis: enabled");
-            }
-        }
-        "text" | _ => {
-            println!("Archive: {}", result.filename);
-            println!("Entries: {}", result.entry_count);
-            println!("Total size: {} bytes", result.total_size);
-            for (idx, entry) in filtered_entries.iter().enumerate() {
-                println!("  {}", idx + 1);
-                println!("    Path: {}", entry.path);
-                println!("    Size: {} bytes", entry.size);
-                if entry.is_text() {
-                    println!("    Type: text");
-                }
-                println!();
-            }
-            if args.patterns {
-                println!("Pattern analysis (ngrams/prefixes/suffixes): would be computed here");
-            }
-        }
-    }
-    Ok(())
-}
-    markdown_only: bool,
-    /// Maximum file size in bytes (default: 10MB)
-    #[arg(short, long)]
-    max_file_size: Option<u64>,
-    /// Output format: json, text, or summary
-    #[arg(short, long, default_value = "text")]
-    format: String,
-    /// Show pattern analysis (ngrams, prefixes, suffixes)
-    #[arg(short, long)]
-    patterns: bool,
-    /// List entries without extracting content
-    #[arg(short, long)]
-    list_only: bool,
-    /// Apply split-by-category mode
-    #[arg(short, long)]
-    split: bool,
 }
 
 #[derive(Clone, Copy, ValueEnum)]
@@ -871,66 +437,38 @@ fn resolve_split_config(
 fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
     let data = std::fs::read(&args.input).map_err(|e| format!("Failed to read file: {}", e))?;
     let filename = std::path::Path::new(&args.input).file_name().unwrap_or_default().to_string_lossy().to_string();
-
+    
     // Use the archive tool to extract the archive
     let result = archive::extract(&data, &filename).map_err(|e| format!("Archive error: {}", e))?;
-
+    
     // If arist path is provided, integrate with it
     if let Some(arist_path) = &args.arist {
         // TODO: integrate with ~/projects/arist for interpretation
         // For now, just log the path
         log::info!("Arist project path: {}", arist_path);
     }
-
-    // Handle split mode - extract all categories separately
-    if args.split {
-        let categories = ["lean", "markdown", "svg", "web", "gif", "graphics", "source", "data", "binary", "other"];
-        let mut any_extracted = false;
-
-        for cat in &categories {
-            let extracted = crate::archive::extract_by_category(&data, &filename, cat);
-            match extracted {
-                Ok(entries) if !entries.is_empty() => {
-                    any_extracted = true;
-                    println!("\n--- {} ({} files) ---", cat, entries.len());
-                    for entry in &entries {
-                        println!("  {}", entry.path);
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        if !any_extracted {
-            eprintln!("No files found matching any category in the archive.");
-        }
-        return Ok(());
-    }
-
+    
     // Apply category filter if specified
-    let category_filter = args.category.clone();
-    
-    // Apply markdown-only filter
-    let markdown_only = args.markdown_only;
-    
-    // Apply max file size filter
-    let max_size = args.max_file_size.unwrap_or(MAX_FILE_SIZE);
-    
-    // Start with all entries, then apply filters
-    let mut filtered_entries: Vec<&ArchiveEntry> = result.entries.iter().collect();
-    
-    // Apply category filter
-    if let Some(ref category) = category_filter {
-        filtered_entries.retain(|e| categorize_by_extension(&e.path) == category);
+    if let Some(ref category) = args.category {
+        // Filter entries by category
+        println!("Category filter: {}", category);
     }
     
     // Apply markdown-only filter
-    if markdown_only {
-        filtered_entries.retain(|e| e.is_text() && (e.path.to_lowercase().ends_with(".md") || e.path.to_lowercase().ends_with(".lean")));
+    if args.markdown_only {
+        let markdown_entries: Vec<_> = result.entries.iter()
+            .filter(|e| e.is_text() && e.path.to_lowercase().ends_with(".md") || e.path.to_lowercase().ends_with(".lean"))
+            .cloned()
+            .collect();
+        println!("Markdown-only mode: {} entries", markdown_entries.len());
     }
     
     // Apply max file size filter
-    filtered_entries.retain(|e| e.size <= max_size);
+    let max_size = args.max_file_size.unwrap_or(crate::archive::MAX_FILE_SIZE);
+    let filtered_entries: Vec<_> = result.entries.iter()
+        .filter(|e| e.size <= max_size)
+        .cloned()
+        .collect();
     
     // Output results based on format
     match args.format.as_str() {
@@ -973,6 +511,7 @@ fn run_archive_cli(args: ArchiveArgs) -> Result<(), String> {
     }
     Ok(())
 }
+
 fn to_split_unit(value: CliUnit) -> SplitUnit {
     match value {
         CliUnit::Byte => SplitUnit::Byte,
@@ -1037,9 +576,6 @@ async fn main() -> std::io::Result<()> {
     let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
     let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
     log::info!("🚀 Starting kant-pastebin microservice on {}", bind);
-    log::info!("📁 UUCP spool: {}", uucp_dir);
-    log::info!("📦 Version: git={} built={}", git_commit, build_time);
-
     // Initialize plugin registry
     let mut registry = plugin::PluginRegistry::new();
     registry.register(Box::new(plugins::screenshot::ScreenshotPlugin::new()));

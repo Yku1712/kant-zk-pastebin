@@ -22,6 +22,8 @@ use std::path::Path;
 use std::sync::Arc;
 use std::{collections::HashMap, env, fs, sync::Mutex};
 
+use once_cell::sync::Lazy;
+
 // ─── Full error capture — saves replayable test case ───────────────
 /// Captures the full request details on failure and writes a replayable
 /// test case document to /var/log/nginx/error-docs/cases/.
@@ -3978,11 +3980,8 @@ pub async fn run_plugin(
 // Archive Upload + Viewer
 // ═════════════════════════════════════════════════════════════════════
 
-/// Temporary in-memory storage for extracted archives keyed by session ID.
-lazy_static::lazy_static! {
-    static ref ARCHIVE_STORE: Mutex<HashMap<String, crate::archive::ArchiveResult>> =
-        Mutex::new(HashMap::new());
-}
+static ARCHIVE_STORE: once_cell::sync::Lazy<Mutex<HashMap<String, crate::archive::ArchiveResult>>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(HashMap::new()));
 
 /// POST /upload-archive — upload a .tar.gz/.zip/etc., extract, return listing
 pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<HttpResponse> {
