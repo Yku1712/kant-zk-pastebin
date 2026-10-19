@@ -3429,6 +3429,7 @@ dependencies = [
  "log",
  "mime_guess",
  "multibase 0.9.3",
+ "once_cell",
  "quick-protobuf",
  "regex-lite",
  "reqwest 0.11.27",
