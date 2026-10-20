@@ -140,7 +140,7 @@ ExecStart=$BINARY --bind 0.0.0.0 --port ${BETA_PORT}
 Restart=always
 RestartSec=10
 Environment="UUCP_SPOOL=$UUCP_SPOOL"
-Environment="BASE_PATH=/pastebin"
+Environment="BASE_PATH=/pastebin/beta"
 Environment="BASE_URL=https://${DOMAIN}"
 Environment="RUST_LOG=info"
 Environment="GIT_COMMIT=${GIT_COMMIT}"
