@@ -81,7 +81,7 @@ impl PasteTantivyIndex {
         // Create index
         let schema = schema_builder.build();
         let index = Index::open_or_create(
-            tantivy::directory::FsDirectory::open(&self.config.index_path)?,
+            tantivy::directory::Directory::open(&self.config.index_path)?,
             schema,
         )?;
 
@@ -195,7 +195,7 @@ impl PasteTantivyIndex {
                 let search_results = searcher.search(&query, &collector)?;
 
                 for (_score, doc_address) in search_results {
-                    if let Ok(doc) = searcher.doc::<tantivy::schema::Document>(doc_address) {
+                    if let Ok(doc) = searcher.doc(doc_address) {
                         let id = doc
                             .get_first(id_field)
                             .and_then(|v| v.as_text())
