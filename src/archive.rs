@@ -12,6 +12,28 @@ pub struct ArchiveEntry {
     pub content: Option<String>,
 }
 
+impl<'de> serde::Deserialize<'de> for ArchiveEntry {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct Helper {
+            path: String,
+            size: u64,
+            is_dir: bool,
+            content: Option<String>,
+        }
+        let h = Helper::deserialize(deserializer)?;
+        Ok(ArchiveEntry {
+            path: h.path,
+            size: h.size,
+            is_dir: h.is_dir,
+            content: h.content,
+        })
+    }
+}
+
 impl ArchiveEntry {
     /// Check if this entry is a text file (based on extension or content)
     pub fn is_text(&self) -> bool {
@@ -38,7 +60,7 @@ impl ArchiveEntry {
 }
 
 /// Summary of the extracted archive
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct ArchiveResult {
     pub filename: String,
     pub title: String,
@@ -284,15 +306,16 @@ fn extract_tar_from_reader<R: Read>(reader: R, filename: &str) -> Result<Archive
 
         total_size += size;
 
-        // Read content for files under size limit
-        let content = if size < 1024 * 1024 {
+        // Read content — expand the limit for known text extensions so that
+        // multi-megabyte .txt/.md files are extracted instead of being
+        // reported as "binary" by the archive viewer.
+        let text_ext = MARKDOWN_EXTENSIONS.iter().any(|m| lower_path.ends_with(*m));
+        let content_limit: u64 = if text_ext { MAX_FILE_SIZE } else { 1024 * 1024 };
+        let content = if size < content_limit {
             let mut raw = Vec::new();
             let read_result = entry.read_to_end(&mut raw);
             // Only include text content, skip binary
-            if read_result.is_ok() && raw.windows(4).all(|w| {
-                w.iter()
-                    .all(|&b| b.is_ascii_graphic() || b == b'\n' || b == b'\r' || b == b'\t' || b == b' ')
-            }) {
+            if read_result.is_ok() && guess_is_text(&raw) {
                 Some(String::from_utf8_lossy(&raw).to_string())
             } else {
                 None
@@ -412,14 +435,14 @@ fn extract_zip(data: &[u8], filename: &str) -> Result<ArchiveResult, String> {
 
         total_size += size;
 
-        let content = if size < 1024 * 1024 {
+        // Same widened limit as tar: text extensions may be large.
+        let text_ext = MARKDOWN_EXTENSIONS.iter().any(|m| lower_path.ends_with(*m));
+        let content_limit: u64 = if text_ext { MAX_FILE_SIZE } else { 1024 * 1024 };
+        let content = if size < content_limit {
             let mut buf = Vec::new();
             file.read_to_end(&mut buf).ok();
             // Only include text content, skip binary
-            if buf.windows(4).all(|w| {
-                w.iter()
-                    .all(|&b| b.is_ascii_graphic() || b == b'\n' || b == b'\r' || b == b'\t' || b == b' ')
-            }) {
+            if guess_is_text(&buf) {
                 Some(String::from_utf8_lossy(&buf).to_string())
             } else {
                 None

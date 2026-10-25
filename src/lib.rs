@@ -1,6 +1,7 @@
 // Modules
 pub mod api;
 pub mod archive;
+pub mod archive_store;
 pub mod archive_utils;
 pub mod dasl;
 pub mod git_mount;
@@ -23,4 +24,5 @@ pub mod splitter;
 pub mod storage;
 pub mod summary;
 pub mod tagging;
+pub mod tantivy_search;
 pub mod view;

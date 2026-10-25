@@ -27,7 +27,9 @@ mod tiles;
 mod view;
 
 mod archive;
+mod archive_store;
 mod archive_utils;
+mod tantivy_search;
 
 mod git_mount;
 
@@ -576,6 +578,10 @@ async fn main() -> std::io::Result<()> {
     let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
     let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
     log::info!("🚀 Starting kant-pastebin microservice on {}", bind);
+    // Initialize persistent archive sessions
+    handlers::load_archive_sessions();
+    // Initialize Tantivy search index
+    tantivy_search::initialize_search_index().ok();
     // Initialize plugin registry
     let mut registry = plugin::PluginRegistry::new();
     registry.register(Box::new(plugins::screenshot::ScreenshotPlugin::new()));

@@ -735,6 +735,9 @@ pub async fn get_paste(
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
     let base_path = env::var("BASE_PATH").unwrap_or_else(|_| "".to_string());
     let base_url = env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8090".to_string());
+    let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
+    let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
+    let id = resolve_cid_alias(&uucp_dir, &id);
 
     // A CID permalink (bafk...) is an alias: resolve it to the real paste id.
     let id = resolve_cid_alias(&uucp_dir, &id);
@@ -1090,6 +1093,9 @@ function bundleSelected() {{
 }}
 </script>
 <script src="{share_menu}/static/a11y.js"></script>
+<div style="margin-top:20px;padding-top:10px;border-top:1px solid #333;font-size:11px;color:#666">
+  kant-pastebin v0.2.0 | built {build_time} | git {git_commit:<7} | <a href="{bp}/api/version" style="color:#0ff">API version</a>
+</div>
 </body></html>"#,
                 title = page.title,
                 bp = page.bp,
@@ -1105,7 +1111,9 @@ function bundleSelected() {{
                 related_html = page.related_html,
                 ipfs_cid = page.ipfs_cid,
                 share_menu = page.share_menu,
-                share_script = page.share_script
+                share_script = page.share_script,
+                build_time = option_env!("BUILD_TIME").unwrap_or("unknown"),
+                git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown")
             );
 
             let lint_issues = lint_html(&html);
@@ -1183,8 +1191,12 @@ function bundleSelected() {{
 <h1>{}</h1>
 <p>CID: {} | IPFS: {}</p>
 {}
+<div style="margin-top:20px;padding-top:10px;border-top:1px solid #333;font-size:11px;color:#666">
+  kant-pastebin v0.2.0 | git: <a href="https://github.com/erdfa/kant-pastebin/commit/{}">{}</a> | built {} | <a href="{}/api/version">API version</a>
+</div>
 </body></html>"#,
-                title, base_path, base_path, base_path, id, title, cid, ipfs_cid, content_html
+                title, base_path, base_path, base_path, id, title, cid, ipfs_cid, content_html,
+                git_commit, git_commit, build_time, base_path
             );
 
             Ok(HttpResponse::Ok()
@@ -1769,7 +1781,7 @@ pub async fn browse(
         .body(items))
 }
 
-fn read_index_entries(uucp_dir: &str) -> Vec<PasteIndex> {
+pub fn read_index_entries(uucp_dir: &str) -> Vec<PasteIndex> {
     let index_file = format!("{}/index.jsonl", uucp_dir);
     fs::read_to_string(&index_file)
         .unwrap_or_default()
@@ -2659,20 +2671,20 @@ fn excerpt_around(content: &str, query: &str, context: usize) -> String {
 }
 
 #[derive(serde::Serialize)]
-struct SearchResult {
-    id: String,
-    title: String,
-    description: Option<String>,
-    keywords: Vec<String>,
-    match_type: String, // "metadata" | "content" | "doc"
-    excerpt: String,
-    url: String,
-    timestamp: String,
-    size: usize,
+pub struct SearchResult {
+    pub id: String,
+    pub title: String,
+    pub description: Option<String>,
+    pub keywords: Vec<String>,
+    pub match_type: String, // "metadata" | "content" | "doc"
+    pub excerpt: String,
+    pub url: String,
+    pub timestamp: String,
+    pub size: usize,
     #[serde(skip_serializing_if = "Option::is_none")]
-    source: Option<String>, // "paste" or "doc"
+    pub source: Option<String>, // "paste" or "doc"
     #[serde(skip_serializing_if = "Option::is_none")]
-    file_path: Option<String>, // for doc results, the filesystem path
+    pub file_path: Option<String>, // for doc results, the filesystem path
 }
 
 /// GET /api/search?q=... - JSON search API, searches both metadata and paste content
@@ -4111,11 +4123,37 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
     })))
 }
 
+/// Helper: load archive session from in-memory cache or disk (persistent across restarts).
+pub fn get_archive_session(session_id: &str) -> Option<crate::archive::ArchiveResult> {
+    // Try in-memory cache first
+    {
+        let store = ARCHIVE_STORE.lock().unwrap();
+        if let Some(r) = store.get(session_id) {
+            return Some(r.clone());
+        }
+    }
+    // Fall back to disk
+    let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
+    crate::archive_store::load_session(&uucp_dir, session_id)
+}
+
+/// Initialize in-memory cache by loading all sessions from disk at startup.
+pub fn load_archive_sessions() {
+    let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
+    let sessions = crate::archive_store::load_all_sessions(&uucp_dir);
+    if !sessions.is_empty() {
+        let mut store = ARCHIVE_STORE.lock().unwrap();
+        for (id, result) in sessions {
+            store.insert(id, result);
+        }
+        log::info!("Loaded {} archive sessions from disk", store.len());
+    }
+}
+
 /// GET /archive-viewer/{session_id} — HTML view of extracted files with checkboxes
 pub async fn archive_viewer(path: web::Path<String>) -> Result<HttpResponse> {
     let session_id = path.into_inner();
-    let store = ARCHIVE_STORE.lock().unwrap();
-    let result = match store.get(&session_id) {
+    let result = match get_archive_session(&session_id) {
         Some(r) => r,
         None => return Ok(HttpResponse::NotFound().body("Archive session not found or expired")),
     };
@@ -4336,8 +4374,7 @@ pub async fn archive_generate(
     let session_id = path.into_inner();
     let files = body.into_inner().remove("files").unwrap_or_default();
 
-    let store = ARCHIVE_STORE.lock().unwrap();
-    let result = match store.get(&session_id) {
+    let result = match get_archive_session(&session_id) {
         Some(r) => r,
         None => {
             return Ok(
@@ -4453,8 +4490,7 @@ pub async fn archive_split(
     let session_id = path.into_inner();
     let files = body.into_inner().remove("files").unwrap_or_default();
 
-    let store = ARCHIVE_STORE.lock().unwrap();
-    let result = match store.get(&session_id) {
+    let result = match get_archive_session(&session_id) {
         Some(r) => r,
         None => {
             return Ok(
@@ -4544,8 +4580,7 @@ pub async fn archive_split(
 /// GET /archive-preview/{session_id}/{index} — JSON preview of a single file
 pub async fn archive_preview(path: web::Path<(String, usize)>) -> Result<HttpResponse> {
     let (session_id, idx) = path.into_inner();
-    let store = ARCHIVE_STORE.lock().unwrap();
-    let result = match store.get(&session_id) {
+    let result = match get_archive_session(&session_id) {
         Some(r) => r,
         None => {
             return Ok(
@@ -4570,8 +4605,7 @@ pub async fn archive_preview(path: web::Path<(String, usize)>) -> Result<HttpRes
 /// POST /archive-post-file/{session_id}/{idx} — post a single file from archive as a paste
 pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpResponse> {
     let (session_id, idx) = path.into_inner();
-    let store = ARCHIVE_STORE.lock().unwrap();
-    let result = match store.get(&session_id) {
+    let result = match get_archive_session(&session_id) {
         Some(r) => r,
         None => {
             return Ok(

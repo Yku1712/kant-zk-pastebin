@@ -23,7 +23,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 PASTEBIN_DIR="${PASTEBIN_DIR:-$SCRIPT_DIR}"
-BETA_PORT="${BETA_PORT:-8084}"
+BETA_PORT="${BETA_PORT:-8085}"
 DOMAIN="${PASTEBIN_DOMAIN:-solana.solfunmeme.com}"
 NGINX_SERVICES_DIR="${NGINX_SERVICES_DIR:-/etc/nginx/services.d}"
 NGINX_MERGED_DIR="${NGINX_MERGED_DIR:-/etc/nginx-sm-merged/services.d}"
@@ -136,10 +136,12 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=$PASTEBIN_DIR
-ExecStart=$BINARY --bind 0.0.0.0 --port ${BETA_PORT}
+ExecStart=$BINARY
 Restart=always
 RestartSec=10
 Environment="UUCP_SPOOL=$UUCP_SPOOL"
+Environment="BIND_ADDR=0.0.0.0:${BETA_PORT}"
+Environment="PORT=${BETA_PORT}"
 Environment="BASE_PATH=/pastebin/beta"
 Environment="BASE_URL=https://${DOMAIN}"
 Environment="RUST_LOG=info"

@@ -1,7 +1,13 @@
-.PHONY: help build run deploy restart switch logs diagnose clean tiles \
+.PHONY: help setup build run deploy restart switch logs diagnose clean tiles \
 	svg-queue svg-worker-start svg-worker-status svg-cli-build \
 	task-gif-lookup task-deploy-verify task-worker-fix task-perm-fix \
 	sm-update sm-build sm-switch
+
+# Comment = NIX Required
+# IMPORTANT: Always use 'nix develop' for cargo builds.
+# Without nix environment, cargo build fails with:
+#   "Header expansion error" - OpenSSL dev headers missing
+# See flake.nix for devShell config (includes openssl.dev, pkg-config)
 
 PASTEBIN_DIR := /mnt/data1/kant/pastebin
 SM_DIR       := /home/mdupont/projects/system-manager
@@ -14,12 +20,15 @@ DEEPSEEK_ENV := /home/mdupont/.deepseek/env.sh
 help:
 	@echo "Kant Pastebin"
 	@echo ""
-	@echo "Build & Run:"
-	@echo "  make build       — Nix build (nix build .#kant-pastebin)"
-	@echo "  make dev         — Cargo build via nix develop"
-	@echo "  make run         — Run via nix develop"
+	@echo "=== Quick Start ==="
+	@echo "  make setup       — Enter nix develop shell (has openssl, pkg-config, rust)"
+	@echo "  make dev         — Build with nix develop (recommended, avoids OpenSSL issues)"
+	@echo "  make run         — Run with nix develop"
 	@echo ""
-	@echo "Deploy:"
+	@echo "=== Build & Run ==="
+	@echo "  make build       — Nix build (nix build .#kant-pastebin)"
+	@echo ""
+	@echo "=== Deploy:"
 	@echo "  make deploy      — Full deployment (nix build, commit, push, activate, restart)"
 	@echo "  make restart     — Restart pastebin + svg2anim-worker services"
 	@echo "  make switch      — Build + activate system-manager config"
@@ -48,6 +57,18 @@ help:
 	@echo "  make task-perm-fix     — /tmp PermissionDenied fix"
 
 # ── Build & Run ──
+#
+# IMPORTANT: Always use 'nix develop' for cargo builds to ensure OpenSSL,
+# pkg-config, and other system dependencies are available. Building with bare
+# 'cargo build' outside nix will fail with OpenSSL header errors.
+#
+# Quick reference:
+#   make setup    # enter nix develop shell interactively
+#   make dev      # build inside nix develop (non-interactive)
+#   make run      # run inside nix develop
+
+setup:
+	nix develop
 
 build:
 	nix build .#kant-pastebin --no-link
