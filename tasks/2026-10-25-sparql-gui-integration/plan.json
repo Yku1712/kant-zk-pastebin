@@ -1,0 +1,68 @@
+{
+  "task_id": "2026-10-25-sparql-gui-integration",
+  "description": "Integrate SPARQL GUI project with task runner, build binaries, run SPARQL server",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Build SPARQL GUI Binaries",
+      "actions": [
+        "Build sparql-gui via Nix flake",
+        "Verify binaries: ipld-car-shmem-server, ipld-car-shmem-client, letta-ipld-memory, test-tag-42",
+        "Ensure shmem server is running"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 2,
+      "name": "Start SPARQL Web Server",
+      "actions": [
+        "Run letta-ipld-memory web_server command",
+        "Verify /api/sparql endpoint",
+        "Verify web UI at /"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 3,
+      "name": "Load Task Context Data into SPARQL",
+      "actions": [
+        "Use sparql-import.sh to generate RDF Turtle from task contexts",
+        "POST RDF data to SPARQL endpoint",
+        "Verify data loaded"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 4,
+      "name": "Add SPARQL MCP Tools to lean-ctx",
+      "actions": [
+        "Register sparql_query MCP tool",
+        "Register sparql_import MCP tool",
+        "Register sparql_status MCP tool",
+        "Test MCP integration"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 5,
+      "name": "Integrate with Task Runner Scripts",
+      "actions": [
+        "Update task-context-runner.sh with SPARQL options",
+        "Update task-prefetcher.sh with SPARQL options",
+        "Add sparql-web-start.sh script",
+        "Test full integration"
+      ],
+      "status": "pending"
+    }
+  ],
+  "tools_needed": [
+    "ipld-car-shmem-server",
+    "letta-ipld-memory",
+    "sparql-import.sh",
+    "sparql-query.sh",
+    "sparql-status.sh",
+    "task-context-runner.sh",
+    "dasl-planner",
+    "lean-ctx"
+  ]
+}
