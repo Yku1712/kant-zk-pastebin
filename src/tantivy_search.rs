@@ -6,14 +6,14 @@ use std::sync::{Arc, RwLock};
 use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT, Field};
-use tantivy::tokenizer::TextAnalyzer;
+use tantivy::directory;
 use tantivy::{doc, Index, IndexWriter, Searcher, Term};
 
 use crate::model::PasteIndex;
 use crate::handlers::read_index_entries;
 
 /// Configuration for the Tantivy search index.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct TantivyConfig {
     /// Path where the Tantivy index files are stored.
     pub index_path: String,
@@ -80,7 +80,10 @@ impl PasteTantivyIndex {
 
         // Create index
         let schema = schema_builder.build();
-        let index = Index::create_or_load(&self.config.index_path, schema)?;
+        let index = Index::open_or_create(
+            tantivy::directory::FsDirectory::open(&self.config.index_path)?,
+            schema,
+        )?;
 
         self.index = Some(index.clone());
 
@@ -192,7 +195,7 @@ impl PasteTantivyIndex {
                 let search_results = searcher.search(&query, &collector)?;
 
                 for (_score, doc_address) in search_results {
-                    if let Ok(doc) = searcher.doc(doc_address) {
+                    if let Ok(doc) = searcher.doc::<tantivy::schema::Document>(doc_address) {
                         let id = doc
                             .get_first(id_field)
                             .and_then(|v| v.as_text())
