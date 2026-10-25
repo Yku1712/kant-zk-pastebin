@@ -1,0 +1,14 @@
+{
+  "id": "2026-10-25-sparql-server-integration",
+  "type": "task_context",
+  "description": "Task context loaded via lean-ctx + shmem",
+  "created": "2026-10-25T15:32:15.262953",
+  "prefetched": true,
+  "components": {
+    "chats": true,
+    "git": true,
+    "related_tasks": true
+  },
+  "path": "2026-10-25-sparql-server-integration",
+  "namespace": "project/kant-pastebin/"
+}
