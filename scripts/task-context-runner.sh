@@ -116,6 +116,28 @@ print(json.dumps(task_data, indent=2))
     echo "✅ Task context loaded for: $task_id"
 }
 
+# Load shmem tools context (surfaces all shmem-mcp tools for SPARQL GUI)
+load_shmem_tools() {
+    local task_id="$1"
+    local context_dir="$TASK_CONTEXT_DIR"
+
+    echo "📊 Loading shmem tools context for: $task_id"
+
+    # Create context directory
+    mkdir -p "$context_dir/$task_id/shmem-tools"
+
+    # Get shmem stats
+    shmem-mcp '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"shmem_stats","arguments":{}}}' > "$context_dir/$task_id/shmem-tools/stats.json" 2>/dev/null || true
+
+    # Get CAR list
+    shmem-mcp '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"shmem_car_list","arguments":{"limit":50}}}' > "$context_dir/$task_id/shmem-tools/car-list.json" 2>/dev/null || true
+
+    # Get related tasks
+    shmem-mcp '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"shmem_blocks_search","arguments":{"term":"'$task_id'"}}}' > "$context_dir/$task_id/shmem-tools/related.json" 2>/dev/null || true
+
+    echo "✅ Shmem tools context loaded for: $task_id"
+}
+
 # Main task execution
 if [[ "$1" == "load" ]]; then
     task_id="$2"
@@ -125,6 +147,14 @@ if [[ "$1" == "load" ]]; then
         exit 1
     fi
     load_task_context "$task_id"
+elif [[ "$1" == "load-shmem-tools" ]]; then
+    task_id="$2"
+    if [[ -z "$task_id" ]]; then
+        echo "Error: task_id required"
+        echo "Usage: $0 load-shmem-tools <task_id>"
+        exit 1
+    fi
+    load_shmem_tools "$task_id"
 elif [[ "$1" == "list" ]]; then
     echo "Available task contexts:"
     ls -1 "$TASK_CONTEXT_DIR" 2>/dev/null | head -20
