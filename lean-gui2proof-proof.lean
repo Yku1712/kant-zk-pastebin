@@ -1,48 +1,42 @@
--- Proof that the SPARQL GUI integration is working
--- This proves that the nginx proxy correctly forwards all GUI API endpoints
+## SPARQL GUI Pipeline Stage Fix
 
--- The SPARQL GUI is now accessible via nginx at:
---   https://solana.solfunmeme.com/api/health
---   https://solana.solfunmeme.com/api/sparql
---   https://solana.solfunmeme.com/api/blocks
---   https://solana.solfunmeme.com/api/block-content
---   https://solana.solfunmeme.com/api/pipeline
---   https://solana.solfunmeme.com/tile/sparql-gui/
+**Problem**: The default pipeline stage 'paths' fails with "Query parse error: error at 2:23: expected one of Prefix not found" because it uses `dash:` prefix without declaration.
 
--- Proof that all endpoints are reachable and return valid JSON
+**Root Cause**: The default pipeline stage query:
+```
+CONSTRUCT {
+  ?item a dash:segment ;
+        dash:depth ?depth ;
+        dash:component ?comp .
+}
+WHERE {
+  ?s a <http://dasl.org/letta/memory#Block> ;
+     <http://dasl.org/letta/memory#path> ?path .
+}
+```
 
-module Gui2ProofIntegration
+The `dash:` prefix is not declared in the query, causing a parse error.
 
-open Lean
+**Fix**: Replace `dash:` with full IRI `http://dasl.org/letta/dash#` in the pipeline stages:
 
-/-- The SPARQL GUI backend is running on port 8088 and is accessible via nginx proxy.
--- This proves the integration is functional. -/
+**Fixed query:**
+```
+CONSTRUCT {
+  ?item a <http://dasl.org/letta/dash#segment> ;
+        <http://dasl.org/letta/dash#depth> ?depth ;
+        <http://dasl.org/letta/dash#component> ?comp .
+}
+WHERE {
+  ?s a <http://dasl.org/letta/memory#Block> ;
+     <http://dasl.org/letta/memory#path> ?path .
+}
+```
 
--- The nginx configuration includes the following location blocks:
---   /api/health → /api/health
---   /api/sparql → /api/sparql
---   /api/blocks → /api/blocks
---   /api/block-content → /api/block-content
---   /api/pipeline → /api/pipeline
---   /api/languages → /api/languages
+**Files to modify**:
+- `/mnt/data1/time-2026/06-june/07/sparql-gui/src/...` (or similar location in the GUI source)
+- Specifically the pipelineStages array in the JavaScript that defines the default pipeline stages
 
-/-- All SPARQL API endpoints return valid JSON with expected structure.
--- This is verified by the curl tests above. -/
-
-theorem sparql_gui_integration_works : True := by
-  -- The SPARQL GUI is now fully integrated via nginx proxy
-  -- All endpoints are accessible and return valid JSON
-  true
-
-/-- The GUI2Proof service was disabled because its module was missing.
--- The SPARQL GUI (separate from GUI2Proof) is now working via nginx.
--- This proves the core integration is functional. -/
-
-theorem gui2proof_ui_accessible : True := by
-  -- The GUI is accessible at https://solana.solfunmeme.com/tile/sparql-gui/
-  -- and all API endpoints are proxied via nginx
-  true
-
--- Summary: The SPARQL GUI integration is complete and working.
--- All endpoints return valid JSON with expected data.
--- The GUI2Proof service was disabled due to missing module (not related to this integration).
+**Verification**:
+- Test with curl using full IRIs should work
+- The GUI should no longer show "Query parse error" for the paths stage
+- All other pipeline stages should continue to work
