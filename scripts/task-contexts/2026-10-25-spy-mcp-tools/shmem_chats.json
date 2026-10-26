@@ -1,0 +1,21 @@
+{
+  "blocks": [
+    {
+      "cid": "0155122017d52857e06d714f39c26c20f37af5d4322cb6552a31ee245a2f5100542fa188",
+      "path": "system/",
+      "description": "System initialization and configuration"
+    },
+    {
+      "cid": "01551220b9488430a98421b8881d5ce62ffd4c3f427fdc5882f0ee4d403d3a7e624b2a52",
+      "path": "project/kant-pastebin/build-workflow",
+      "description": "Kant pastebin nix build workflow and code fixes"
+    },
+    {
+      "cid": "01551220420347d3c2c347ad122a9723e5866bc70f8944436f265226cda9cf08d5724803",
+      "path": "project/twitterstorm/worker-self-status-follow-testing",
+      "description": "Worker follow behavior testing documentation"
+    }
+  ],
+  "total_blocks": 3,
+  "query_type": "chats"
+}
