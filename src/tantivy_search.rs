@@ -193,22 +193,23 @@ impl PasteTantivyIndex {
                 let search_results = searcher.search(&query, &collector)?;
 
                 for (_score, doc_address) in search_results {
-                    if let Ok(doc) = searcher.doc(doc_address) {
-                        let id = doc
-                            .get_first(id_field)
-                            .and_then(|v| v.as_text())
-                            .unwrap_or("");
-                        let title = doc
-                            .get_first(title_field)
-                            .and_then(|v| v.as_text())
-                            .unwrap_or("");
-                        let description = doc
-                            .get_first(description_field)
-                            .and_then(|v| v.as_text());
-                        let timestamp = doc
-                            .get_first(timestamp_field)
-                            .and_then(|v| v.as_text())
-                            .unwrap_or("");
+                    let doc = searcher.doc(doc_address).unwrap();
+                    let id = doc
+                        .get_first(id_field)
+                        .and_then(|v| v.as_text())
+                        .unwrap_or("");
+                    let title = doc
+                        .get_first(title_field)
+                        .and_then(|v| v.as_text())
+                        .unwrap_or("");
+                    let description = doc
+                        .get_first(description_field)
+                        .and_then(|v| v.as_text());
+                    let timestamp = doc
+                        .get_first(timestamp_field)
+                        .and_then(|v| v.as_text())
+                        .unwrap_or("");
+
 
                         // Avoid duplicates
                         if !results.iter().any(|r: &crate::handlers::SearchResult| r.id == id) {
