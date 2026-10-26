@@ -124,3 +124,26 @@ case "$ACTION" in
     echo "  - shmem-blocks-search.sh → shmem_blocks_search (blocks search)"
     ;;
 esac
+
+  sparql-mcp)
+    echo "🔍 SPARQL MCP Tools - HTTP access to SPARQL GUI"
+    echo ""
+    echo "Available tools:"
+    echo "  sparql_query → Query SPARQL endpoint"
+    echo "  sparql_import → Import data to SPARQL"
+    echo "  sparql_status → Check SPARQL status"
+    echo ""
+    echo "To query SPARQL:"
+    echo "  $0 sparql-query \"SELECT * WHERE { ?s ?p ?o } LIMIT 5\""
+    echo ""
+    query="${2:-SELECT * WHERE { ?s ?p ?o } LIMIT 5}"
+    curl -s -X POST "${SPARQL_GUI_URL:-http://127.0.0.1:8088}/api/sparql" \
+         -H "Content-Type: application/json" \
+         -d "{\"query\": \"${query}\"}" \
+         | jq .
+    ;;
+
+  sparql-status)
+    echo "🔍 Checking SPARQL GUI status..."
+    curl -s -m 5 ${SPARQL_GUI_URL:-http://127.0.0.1:8088}/status 2>/dev/null | jq . || echo "SPARQL GUI not reachable"
+    ;;
