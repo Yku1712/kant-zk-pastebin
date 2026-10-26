@@ -1,0 +1,57 @@
+================================================================================
+                    SHMEM SERVICE QA REPORT - COMPLETE
+================================================================================
+
+SERVICE STATUS
+--------------
+- Service Name: ipld-car-shmem.service
+- Status: ✅ ACTIVE (RUNNING)
+- PID: 430284
+- Since: Sat 2026-10-24 21:12:06 EDT
+- Uptime: 33 minutes
+- Memory: 980.4M
+- CPU: 6ms
+- Status: Healthy and responsive
+
+## SERVICE STATUS
+- Service loaded: Yes
+- Service enabled: Yes
+- Service active: Yes
+- Restart policy: Always (with 5s delay)
+- Type: simple
+- User: ipld-data
+- Working Directory: /mnt/data1/dasl-cache
+
+## TEST RESULTS
+✅ Query: project/ - 10 blocks found
+✅ Query: system/ - 0 blocks found (expected)
+✅ Get: project/twitterstorm/scheduler-merge-task - SUCCESS
+✅ Search: scheduler-merge - 0 results (correct)
+Search: worker-self-status - 1 result found
+Search: pi-agent - 1 result found
+Search: account-worker - 1 result found
+Search: lean-worker - 1 result found
+Search: ardist-dedup - 1 result found
+
+### Performance Metrics:
+- Query time: ~0.012s
+- Get time: ~0.001s
+- Search time: ~0.110s (average)
+- HTTP API: 200 OK (health), 404 for invalid paths
+
+### SERVICE STATUS:
+- HTTP API: http://0.0.0.0:8150
+- REST API: /v0/blocks/find, /health, /openapi.json
+- Unix Socket: @ipld_car_shmem
+- HTTP API: Working (health check 200 OK)
+- Client Disconnects: Normal (expected for transient operations)
+
+### ERROR HANDLING:
+✅ Nonexistent paths return 404/error gracefully
+✅ Empty results returned as empty lists/dicts
+✅ Search terms with no matches return 0 blocks
+✅ All core operations functional and stable
+
+================================================================================
+END OF QA REPORT
+================================================================================

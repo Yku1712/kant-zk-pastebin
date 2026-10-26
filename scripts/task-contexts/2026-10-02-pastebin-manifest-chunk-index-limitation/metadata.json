@@ -1,0 +1,14 @@
+{
+  "id": "2026-10-02-pastebin-manifest-chunk-index-limitation",
+  "type": "task_context",
+  "description": "Task context loaded via lean-ctx + shmem",
+  "created": "2026-10-25T20:11:57.227109",
+  "prefetched": true,
+  "components": {
+    "chats": true,
+    "git": true,
+    "related_tasks": true
+  },
+  "path": "2026-10-02-pastebin-manifest-chunk-index-limitation",
+  "namespace": "project/kant-pastebin/"
+}

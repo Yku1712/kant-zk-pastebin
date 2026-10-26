@@ -6,8 +6,9 @@ use std::sync::{Arc, RwLock};
 use tantivy::collector::{Count, TopDocs};
 use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT, Field};
-use tantivy::directory;
+use tantivy::directory::MmapDirectory;
 use tantivy::{doc, Index, IndexWriter, Searcher, Term};
+use tantivy::schema::Document;
 
 use crate::model::PasteIndex;
 use crate::handlers::read_index_entries;
@@ -80,10 +81,7 @@ impl PasteTantivyIndex {
 
         // Create index
         let schema = schema_builder.build();
-        let index = Index::open_or_create(
-            tantivy::directory::Directory::open(&self.config.index_path)?,
-            schema,
-        )?;
+        let index = Index::open_or_create(MmapDirectory::open(&self.config.index_path)?, schema)?;
 
         self.index = Some(index.clone());
 

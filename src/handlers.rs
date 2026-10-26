@@ -1319,9 +1319,12 @@ function bundleSelected() {{
 <div><a href="{}/">🏠 Home</a> <a href="{}/browse">📚 Browse</a> <a href="{}/file/{}">📄 Raw</a></div>
 <h1>{}</h1>
 <p>MIME: {} | {} bytes</p>
+<div style="margin-top:20px;padding-top:10px;border-top:1px solid #333;font-size:11px;color:#666">
+  kant-pastebin v0.2.0 | git: <a href="https://github.com/erdfa/kant-pastebin/commit/{}">{}</a> | built {} | <a href="{}/api/version">API version</a>
+</div>
 {}
 </body></html>"##,
-                        title, base_path, base_path, base_path, id, title, display_mime, data.len(), content_html
+                        title, base_path, base_path, base_path, id, title, display_mime, data.len(), git_commit, git_commit, build_time, base_path, content_html
                     );
 
                     Ok(HttpResponse::Ok()
