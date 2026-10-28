@@ -191,7 +191,7 @@ class Room {
 }
 
 // WASM kernel loader — fetches and instantiates the Lean kernel
-handleWasmLoad = async (env) => {
+const handleWasmLoad = async (env) => {
   let wasmBytes;
 
   // Try KV cache first, then URL fetch, then published IPFS/CF Pages
