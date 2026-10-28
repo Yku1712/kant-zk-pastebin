@@ -591,6 +591,7 @@ fn publish_cid_alias(ctx: &str, cid_file: &str, id: &str) {
             ctx, id, cid_file, e
         ),
     }
+}
 
 async fn create_paste_inner(paste: Paste) -> Result<HttpResponse> {
     let content = paste.content.as_deref().unwrap_or("");
@@ -869,8 +870,8 @@ pub async fn get_paste(
     let base_url = env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8090".to_string());
     let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
     let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
-    let id = resolve_cid_alias(&uucp_dir, &id);
-
+    // Validate the raw id before it reaches the filesystem, then validate
+    // again what the alias resolved to.
     if !is_safe_paste_id(&id) {
         return Ok(HttpResponse::BadRequest().body("Invalid paste id"));
     }
