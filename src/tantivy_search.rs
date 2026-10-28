@@ -8,7 +8,7 @@ use tantivy::query::QueryParser;
 use tantivy::schema::{Schema, STORED, TEXT, Field};
 use tantivy::directory::MmapDirectory;
 use tantivy::{doc, Index, IndexWriter, Searcher, Term};
-use tantivy::schema::Document;
+use tantivy::schema::{Document, TantivyDocument};
 
 use crate::model::PasteIndex;
 use crate::handlers::read_index_entries;
@@ -193,40 +193,50 @@ impl PasteTantivyIndex {
                 let search_results = searcher.search(&query, &collector)?;
 
                 for (_score, doc_address) in search_results {
-                    let doc = searcher.doc(doc_address).unwrap();
+                    let doc: TantivyDocument = searcher.doc(doc_address).unwrap();
                     let id = doc
                         .get_first(id_field)
-                        .and_then(|v| v.as_text())
+                        .and_then(|v| match v {
+                            tantivy::schema::OwnedValue::Str(s) => Some(s.as_str()),
+                            _ => None,
+                        })
                         .unwrap_or("");
                     let title = doc
                         .get_first(title_field)
-                        .and_then(|v| v.as_text())
+                        .and_then(|v| match v {
+                            tantivy::schema::OwnedValue::Str(s) => Some(s.as_str()),
+                            _ => None,
+                        })
                         .unwrap_or("");
                     let description = doc
                         .get_first(description_field)
-                        .and_then(|v| v.as_text());
+                        .and_then(|v| match v {
+                            tantivy::schema::OwnedValue::Str(s) => Some(s.as_str()),
+                            _ => None,
+                        });
                     let timestamp = doc
                         .get_first(timestamp_field)
-                        .and_then(|v| v.as_text())
+                        .and_then(|v| match v {
+                            tantivy::schema::OwnedValue::Str(s) => Some(s.as_str()),
+                            _ => None,
+                        })
                         .unwrap_or("");
 
-
-                        // Avoid duplicates
-                        if !results.iter().any(|r: &crate::handlers::SearchResult| r.id == id) {
-                            results.push(crate::handlers::SearchResult {
-                                id: id.to_string(),
-                                title: title.to_string(),
-                                description: description.map(|s| s.to_string()),
-                                keywords: Vec::new(),
-                                match_type: "content".to_string(),
-                                excerpt: String::new(),
-                                url: format!("/paste/{}", id),
-                                timestamp: timestamp.to_string(),
-                                size: 0,
-                                source: Some("paste".to_string()),
-                                file_path: None,
-                            });
-                        }
+                    // Avoid duplicates
+                    if !results.iter().any(|r: &crate::handlers::SearchResult| r.id == id) {
+                        results.push(crate::handlers::SearchResult {
+                            id: id.to_string(),
+                            title: title.to_string(),
+                            description: description.map(|s| s.to_string()),
+                            keywords: Vec::new(),
+                            match_type: "content".to_string(),
+                            excerpt: String::new(),
+                            url: format!("/paste/{}", id),
+                            timestamp: timestamp.to_string(),
+                            size: 0,
+                            source: Some("paste".to_string()),
+                            file_path: None,
+                        });
                     }
                 }
             }
