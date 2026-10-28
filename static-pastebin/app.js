@@ -6,6 +6,26 @@ const STORE_NAME = 'pastes';
 let db;
 let serverUrl = localStorage.getItem('serverUrl') || 'https://solana.solfunmeme.com/pastebin';
 
+// Paste titles, ids and CIDs come from shared links and from other people's
+// pastes, so they are data, never markup. Anything interpolated into HTML goes
+// through escapeHtml(), and anything that needs to react to a click gets a real
+// listener instead of an inline handler (an inline handler is a second parse
+// context: a title containing a quote escapes the string and becomes code).
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[ch]);
+}
+
+// Only http(s) may become a link — a stored `javascript:` URL must not.
+function safeHttpUrl(value) {
+  return /^https?:\/\//i.test(String(value ?? '')) ? String(value) : '';
+}
+
 // Initialize IndexedDB
 function initDB() {
   const request = indexedDB.open(DB_NAME, 1);
@@ -116,11 +136,14 @@ async function syncToServer(paste) {
       paste.serverUrl = `${serverUrl}/paste/${data.id}`;
       tx.objectStore(STORE_NAME).put(paste);
       
-      document.getElementById('result').innerHTML += `<br>☁️ Synced to server: ${data.id}`;
+      document.getElementById('result').innerHTML += `<br>☁️ Synced to server: ${escapeHtml(data.id)}`;
       if (data.ipfs_cid) {
-        document.getElementById('result').innerHTML += `<br>📦 IPFS: ${data.ipfs_cid}`;
+        document.getElementById('result').innerHTML += `<br>📦 IPFS: ${escapeHtml(data.ipfs_cid)}`;
       }
-      document.getElementById('result').innerHTML += `<br>🔗 URL: <a href="${paste.serverUrl}" target="_blank">${paste.serverUrl}</a>`;
+      const linkedUrl = safeHttpUrl(paste.serverUrl);
+      if (linkedUrl) {
+        document.getElementById('result').innerHTML += `<br>🔗 URL: <a href="${escapeHtml(linkedUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkedUrl)}</a>`;
+      }
       
       loadPastes();
     }
@@ -137,23 +160,59 @@ function loadPastes() {
   
   request.onsuccess = () => {
     const pastes = request.result.reverse();
-    const html = pastes.map(p => {
+    const list = document.getElementById('pasteList');
+    list.textContent = '';
+
+    if (!pastes.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No pastes yet';
+      list.appendChild(empty);
+      return;
+    }
+
+    pastes.forEach((p) => {
       const url = p.serverId ? `${serverUrl}/paste/${p.serverId}` : '';
-      return `
-      <div class="paste-item ${p.synced ? 'synced' : ''}">
-        <strong>${p.title}</strong>
-        <span class="timestamp">${new Date(p.timestamp).toLocaleString()}</span>
-        ${p.synced ? '☁️' : '💾'}
-        ${p.ipfsCid ? `<br><code>ipfs cat ${p.ipfsCid}</code>` : ''}
-        <br><button onclick="viewPaste('${p.id}')">View</button>
-        <button onclick="deletePaste('${p.id}')">Delete</button>
-        ${url ? `<button onclick="shareUrl('${url}')">🔗 Share URL</button>` : ''}
-        ${url ? `<button onclick="showQR('${url}', '${p.title}')">📱 QR Code</button>` : ''}
-      </div>
-    `;
-    }).join('');
-    
-    document.getElementById('pasteList').innerHTML = html || '<p>No pastes yet</p>';
+
+      const item = document.createElement('div');
+      item.className = 'paste-item' + (p.synced ? ' synced' : '');
+
+      const title = document.createElement('strong');
+      title.textContent = p.title;
+      item.appendChild(title);
+
+      const timestamp = document.createElement('span');
+      timestamp.className = 'timestamp';
+      timestamp.textContent = new Date(p.timestamp).toLocaleString();
+      item.appendChild(timestamp);
+
+      item.appendChild(document.createTextNode(p.synced ? '☁️' : '💾'));
+
+      if (p.ipfsCid) {
+        item.appendChild(document.createElement('br'));
+        const code = document.createElement('code');
+        code.textContent = `ipfs cat ${p.ipfsCid}`;
+        item.appendChild(code);
+      }
+
+      item.appendChild(document.createElement('br'));
+
+      const addButton = (label, onClick) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.addEventListener('click', onClick);
+        item.appendChild(button);
+      };
+
+      addButton('View', () => viewPaste(p.id));
+      addButton('Delete', () => deletePaste(p.id));
+      if (url) {
+        addButton('🔗 Share URL', () => shareUrl(url));
+        addButton('📱 QR Code', () => showQR(url, p.title));
+      }
+
+      list.appendChild(item);
+    });
   };
 }
 
@@ -199,17 +258,34 @@ function shareUrl(url) {
 function showQR(url, title) {
   const qrDiv = document.createElement('div');
   qrDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border:3px solid #0f0;z-index:1000';
-  qrDiv.innerHTML = `
-    <h3 style="color:#000">${title}</h3>
-    <canvas id="qrcode"></canvas>
-    <br><button onclick="copyQR()">📋 Copy</button>
-    <button onclick="shareQR('${url}', '${title}')">🔗 Share</button>
-    <button onclick="this.parentElement.remove()">Close</button>
-  `;
+
+  const heading = document.createElement('h3');
+  heading.style.color = '#000';
+  heading.textContent = title;
+  qrDiv.appendChild(heading);
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'qrcode';
+  qrDiv.appendChild(canvas);
+
+  qrDiv.appendChild(document.createElement('br'));
+
+  const addButton = (label, onClick) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.addEventListener('click', onClick);
+    qrDiv.appendChild(button);
+  };
+
+  addButton('📋 Copy', () => copyQR());
+  addButton('🔗 Share', () => shareQR(url, title));
+  addButton('Close', () => qrDiv.remove());
+
   document.body.appendChild(qrDiv);
-  
+
   // Generate QR code
-  generateQR(url, document.getElementById('qrcode'));
+  generateQR(url, canvas);
 }
 
 function copyQR() {
@@ -270,7 +346,7 @@ function viewPaste(id) {
     document.getElementById('title').value = paste.title;
     document.getElementById('content').value = paste.content;
     document.getElementById('keywords').value = paste.keywords.join(', ');
-    document.getElementById('result').innerHTML = `✅ Loaded: ${paste.title}`;
+    document.getElementById('result').textContent = `✅ Loaded: ${paste.title}`;
   };
 }
 
@@ -297,16 +373,22 @@ window.addEventListener('load', () => {
       const data = JSON.parse(decodeURIComponent(atob(encoded)));
       
       // Display loaded paste
-      document.getElementById('title').value = data.title;
-      document.getElementById('content').value = data.content;
-      document.getElementById('keywords').value = data.keywords.join(', ');
-      
-      document.getElementById('result').innerHTML = `
-        ✅ Loaded from URL<br>
-        Title: ${data.title}<br>
-        ${data.ipfs_cid ? `IPFS: ${data.ipfs_cid}<br>` : ''}
-        Timestamp: ${new Date(data.timestamp).toLocaleString()}
-      `;
+      document.getElementById('title').value = data.title ?? '';
+      document.getElementById('content').value = data.content ?? '';
+      document.getElementById('keywords').value = (data.keywords || []).join(', ');
+
+      // The fragment is attacker-controlled: render it as text, never markup.
+      const result = document.getElementById('result');
+      result.textContent = '';
+      const addLine = (label, value) => {
+        result.appendChild(document.createTextNode(label + ': ' + value));
+        result.appendChild(document.createElement('br'));
+      };
+      result.appendChild(document.createTextNode('✅ Loaded from URL'));
+      result.appendChild(document.createElement('br'));
+      addLine('Title', data.title ?? '');
+      if (data.ipfs_cid) addLine('IPFS', data.ipfs_cid);
+      addLine('Timestamp', new Date(data.timestamp).toLocaleString());
     } catch (err) {
       console.error('Failed to load paste from URL:', err);
     }
@@ -343,7 +425,7 @@ function splitForChat() {
         <b>Part ${i+1}/${total}</b> <span>${chunks[i].length} chars</span>
         <button onclick="copyChunk(${i})">📋 Copy</button>
       </div>
-      <textarea id="chunk-${i}" readonly style="width:100%;height:80px;font-size:12px">${w.replace(/</g,'&lt;')}</textarea>
+      <textarea id="chunk-${i}" readonly style="width:100%;height:80px;font-size:12px">${escapeHtml(w)}</textarea>
     </div>`;
   });
   document.getElementById('chunks').innerHTML = html;
