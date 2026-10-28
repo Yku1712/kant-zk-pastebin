@@ -24,6 +24,67 @@ use std::{collections::HashMap, env, fs, sync::Mutex};
 
 use once_cell::sync::Lazy;
 
+/// The commands a reader can paste to fetch a paste.
+struct AccessCommands {
+    ipfs: String,
+    raw: String,
+    reply: String,
+}
+
+/// The URL a paste should advertise for itself.
+///
+/// `BASE_URL` wins when set, for a deployment that wants to name its public
+/// origin explicitly. Otherwise the request's own scheme and host are used,
+/// which honour `X-Forwarded-Proto` / `X-Forwarded-Host`, so a paste served
+/// through a proxy advertises the public URL rather than the loopback address
+/// the process happens to bind.
+fn normalized_base_url(req: &actix_web::HttpRequest, base_path: &str) -> String {
+    let normalized_base_path = if base_path.is_empty() {
+        String::new()
+    } else if base_path.starts_with('/') {
+        base_path.to_string()
+    } else {
+        format!("/{}", base_path)
+    };
+
+    match env::var("BASE_URL") {
+        Ok(base_url) if !base_url.trim().is_empty() => {
+            let base_url = base_url.trim_end_matches('/');
+            if normalized_base_path.is_empty() || base_url.ends_with(&normalized_base_path) {
+                base_url.to_string()
+            } else {
+                format!("{}{}", base_url, normalized_base_path)
+            }
+        }
+        _ => {
+            let connection = req.connection_info();
+            format!(
+                "{}://{}{}",
+                connection.scheme(),
+                connection.host(),
+                normalized_base_path
+            )
+        }
+    }
+}
+
+fn access_commands(base_url: &str, id: &str, ipfs_cid: Option<&str>) -> AccessCommands {
+    let ipfs = if let Some(cid) = ipfs_cid {
+        format!("curl {}/ipfs/{}", base_url, cid)
+    } else {
+        "# No IPFS CID available".to_string()
+    };
+
+    AccessCommands {
+        ipfs,
+        raw: format!("curl {}/raw/{}", base_url, id),
+        reply: format!(
+            "curl -X POST {}/paste -H 'Content-Type: application/json' -d '{{\"content\":\"...\",\"reply_to\":\"{}\"}}'",
+            base_url, id
+        ),
+    }
+}
+
 // ─── Full error capture — saves replayable test case ───────────────
 /// Captures the full request details on failure and writes a replayable
 /// test case document to /var/log/nginx/error-docs/cases/.
@@ -867,7 +928,7 @@ pub async fn get_paste(
     let id = path.into_inner();
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
     let base_path = env::var("BASE_PATH").unwrap_or_else(|_| "".to_string());
-    let base_url = env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8090".to_string());
+    let base_url = normalized_base_url(&req, &base_path);
     let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
     let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
     // Validate the raw id before it reaches the filesystem, then validate
@@ -957,14 +1018,12 @@ pub async fn get_paste(
                 });
             let body = &content[body_start..];
 
-            let ipfs_cmd = if let Some(ipfs) = ipfs_cid {
-                format!("ipfs cat {}", ipfs)
-            } else {
-                "# No IPFS CID available".to_string()
-            };
+            let commands = access_commands(&base_url, &id, ipfs_cid);
+            let ipfs_cmd = commands.ipfs;
 
             let file_cmd = format!("cat {}/{}.txt", uucp_dir, id);
-            let curl_cmd = format!("curl {}/raw/{}", base_url, id);
+            let curl_cmd = commands.raw;
+            let reply_cmd = commands.reply;
 
             // Find related posts by keywords
             let current_entry = entries.iter().find(|e| e.id == id);
@@ -1024,6 +1083,7 @@ pub async fn get_paste(
                 ipfs_cmd: String,
                 file_cmd: String,
                 curl_cmd: String,
+                reply_cmd: String,
                 body: String,
                 pipelight_tile: String,
                 git2nora_tile: String,
@@ -1042,6 +1102,7 @@ pub async fn get_paste(
                 ipfs_cmd: ipfs_cmd.to_string(),
                 file_cmd: file_cmd.to_string(),
                 curl_cmd: curl_cmd.to_string(),
+                reply_cmd: reply_cmd.to_string(),
                 body: body.to_string(),
                 pipelight_tile: pipelight_tile.to_string(),
                 git2nora_tile: git2nora_tile.to_string(),
@@ -1092,6 +1153,7 @@ pre{{background:#111;padding:20px;border:1px solid #0f0;overflow:auto;max-height
 <div class="cmd" onclick="navigator.clipboard.writeText('{ipfs_cmd}');this.style.borderColor='#0f0'">$ {ipfs_cmd}</div>
 <div class="cmd" onclick="navigator.clipboard.writeText('{file_cmd}');this.style.borderColor='#0f0'">$ {file_cmd}</div>
 <div class="cmd" onclick="navigator.clipboard.writeText('{curl_cmd}');this.style.borderColor='#0f0'">$ {curl_cmd}</div>
+<div class="cmd" onclick="navigator.clipboard.writeText('{reply_cmd}');this.style.borderColor='#0f0'">$ {reply_cmd}</div>
 
 <h3>Content:</h3>
 <pre onclick="navigator.clipboard.writeText(this.textContent);this.style.borderColor='#0ff';setTimeout(()=>this.style.borderColor='#0f0',1500)" style="cursor:pointer">{body}</pre>
@@ -1235,6 +1297,7 @@ function bundleSelected() {{
                 ipfs_cmd = page.ipfs_cmd,
                 file_cmd = page.file_cmd,
                 curl_cmd = page.curl_cmd,
+                reply_cmd = page.reply_cmd,
                 body = page.body,
                 pipelight_tile = page.pipelight_tile,
                 git2nora_tile = page.git2nora_tile,
@@ -4115,17 +4178,18 @@ pub async fn list_plugins(
 /// POST /plugin/{name}/{id} - Run plugin on a paste
 pub async fn run_plugin(
     path: web::Path<(String, String)>,
+    req: actix_web::HttpRequest,
     registry: web::Data<std::sync::Mutex<plugin::PluginRegistry>>,
     body: web::Json<std::collections::HashMap<String, String>>,
 ) -> Result<HttpResponse> {
     let (plugin_name, paste_id) = path.into_inner();
     let base_path = env::var("BASE_PATH").unwrap_or_default();
-    let base_url = env::var("BASE_URL").unwrap_or_else(|_| "http://127.0.0.1:8090".to_string());
+    let base_url = normalized_base_url(&req, &base_path);
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
 
     // Load paste content
     let content = storage::load_content(&paste_id).unwrap_or_default();
-    let url = format!("{}{}/paste/{}", base_url, base_path, paste_id);
+    let url = format!("{}/paste/{}", base_url, paste_id);
 
     let mut extra = body.into_inner();
     extra.insert("base_path".into(), base_path.clone());
@@ -6028,6 +6092,106 @@ pub async fn api_git_reindex() -> Result<HttpResponse> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use actix_web::test;
+    use std::sync::OnceLock;
+
+    /// Serialises the tests that read or write process environment.
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    struct EnvVarGuard {
+        name: &'static str,
+        original: Option<String>,
+    }
+
+    impl EnvVarGuard {
+        fn set(name: &'static str, value: Option<&str>) -> Self {
+            let original = env::var(name).ok();
+            match value {
+                Some(value) => env::set_var(name, value),
+                None => env::remove_var(name),
+            }
+            Self { name, original }
+        }
+    }
+
+    impl Drop for EnvVarGuard {
+        fn drop(&mut self) {
+            match &self.original {
+                Some(value) => env::set_var(self.name, value),
+                None => env::remove_var(self.name),
+            }
+        }
+    }
+
+    /// A paste served through a proxy must advertise the public origin in its
+    /// access commands, not the loopback address the process binds.
+    #[actix_web::test]
+    async fn access_commands_use_the_forwarded_origin() {
+        let _guard = env_lock().lock().unwrap();
+        let _base_url_env = EnvVarGuard::set("BASE_URL", None);
+
+        let req = test::TestRequest::default()
+            .insert_header(("Host", "pastebin.xware.online"))
+            .insert_header(("X-Forwarded-Host", "pastebin.xware.online"))
+            .insert_header(("X-Forwarded-Proto", "https"))
+            .to_http_request();
+
+        let base_url = normalized_base_url(&req, "");
+        assert_eq!(base_url, "https://pastebin.xware.online");
+
+        let ipfs_cid = "QmdckCoPuhEtiNzREtqpYn8dBgY8ifcG82Q4eyEdGCLEiu";
+        let id = "20260317_211812_untitled";
+        let commands = access_commands(&base_url, id, Some(ipfs_cid));
+
+        assert_eq!(commands.raw, format!("curl https://pastebin.xware.online/raw/{}", id));
+        assert_eq!(
+            commands.ipfs,
+            format!("curl https://pastebin.xware.online/ipfs/{}", ipfs_cid)
+        );
+        assert!(commands.reply.contains("https://pastebin.xware.online/paste"));
+        assert!(!commands.raw.contains("localhost"));
+    }
+
+    /// A paste id in a plugin URL is advertised under the same public origin.
+    #[actix_web::test]
+    async fn plugin_url_uses_the_forwarded_origin() {
+        let _guard = env_lock().lock().unwrap();
+        let _base_url_env = EnvVarGuard::set("BASE_URL", None);
+
+        let req = test::TestRequest::default()
+            .insert_header(("Host", "pastebin.xware.online"))
+            .insert_header(("X-Forwarded-Proto", "https"))
+            .to_http_request();
+
+        assert_eq!(
+            normalized_base_url(&req, "/pastebin"),
+            "https://pastebin.xware.online/pastebin"
+        );
+    }
+
+    /// An explicit BASE_URL wins over whatever the request claims.
+    #[actix_web::test]
+    async fn base_url_override_wins_over_the_request() {
+        let _guard = env_lock().lock().unwrap();
+        let _base_url_env = EnvVarGuard::set("BASE_URL", Some("https://public.example"));
+
+        let req = test::TestRequest::default()
+            .insert_header(("Host", "internal.local"))
+            .to_http_request();
+
+        assert_eq!(normalized_base_url(&req, ""), "https://public.example");
+        assert_eq!(
+            normalized_base_url(&req, "/pastebin"),
+            "https://public.example/pastebin"
+        );
+        assert_eq!(
+            normalized_base_url(&req, "pastebin"),
+            "https://public.example/pastebin"
+        );
+    }
 
     #[test]
     fn similarity_score_prefers_shared_keywords_and_content_terms() {
