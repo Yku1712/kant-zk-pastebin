@@ -1,0 +1,58 @@
+#!/bin/bash
+# SPARQL MCP wrapper - provides HTTP API access to SPARQL GUI
+# Uses curl to communicate with the SPARQL GUI web server
+
+SPARQL_URL="${SPARQL_GUI_URL:-http://127.0.0.1:8088}"
+PORT="${SPARQL_GUI_PORT:-8088}"
+
+case "$1" in
+    "sparql_query")
+        echo "{" | jq --slurpfile data /dev/stdin \
+                   --arg url "${SPARQL_URL}/api/sparql" \
+                   '{
+                     jsonrpc: "2.0",
+                     id: 1,
+                     method: "sparql_query",
+                     params: {
+                       query: (input_data[0].data.query // "SELECT * WHERE { ?s ?p ?o } LIMIT 5"),
+                       endpoint: "$(hostname)"
+                     }
+                   }' 2>/dev/null
+        ;;
+    "sparql_import")
+        echo "{" | jq --slurpfile data /dev/stdin \
+                   --argurl "${SPARQL_URL}/api/import" \
+                   '{
+                     jsonrpc: "2.0",
+                     id: 1,
+                     method: "sparql_import",
+                     params: {
+                       format: "turtle",
+                       endpoint: "$(hostname)"
+                     }
+                   }' 2>/dev/null
+        ;;
+    "sparql_status")
+        echo "{" | jq --slurpfile data /dev/stdin \
+                   --argurl "${SPARQL_URL}/status" \
+                   '{
+                     jsonrpc: "2.0",
+                     id: 1,
+                     method: "sparql_status",
+                     params: {}
+                   }' 2>/dev/null
+        ;;
+    *)
+        echo "{" | jq --slurpfile data /dev/stdin \
+                   --argurl "${SPARQL_URL}/api/sparql" \
+                   '{
+                     jsonrpc: "2.0",
+                     id: 1,
+                     method: "sparql_query",
+                     params: {
+                       query: (input_data[0].data.query // "SELECT * WHERE { ?s ?p ?o } LIMIT 5"),
+                       endpoint: "$(hostname)"
+                     }
+                   }' 2>/dev/null
+        ;;
+esac

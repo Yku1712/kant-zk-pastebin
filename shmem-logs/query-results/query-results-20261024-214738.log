@@ -1,0 +1,13 @@
+  blocks: 1, total: 1
+    - Scheduler scripts merge task documentation and plan
+  blocks: 1, total: 1
+    - Worker follow behavior testing documentation
+  blocks: 1, total: 1
+    - Verifying pi agent uses memory plugin
+  blocks: 1, total: 1
+    - Account worker deployment progress with dynamic proxy accounts, audit logs, pause controls, no-proxy login
+  blocks: 0, total: 0
+  blocks: 10, total: 10
+    - Scheduler scripts merge task documentation and plan
+    - Testing shmem logging
+    - Worker follow behavior testing documentation

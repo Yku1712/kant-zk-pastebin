@@ -1,0 +1,14 @@
+{
+  "id": "2026-10-02-pastebin-dirty-worktree-cleanup",
+  "type": "task_context",
+  "description": "Task context loaded via lean-ctx + shmem",
+  "created": "2026-10-25T20:11:56.572856",
+  "prefetched": true,
+  "components": {
+    "chats": true,
+    "git": true,
+    "related_tasks": true
+  },
+  "path": "2026-10-02-pastebin-dirty-worktree-cleanup",
+  "namespace": "project/kant-pastebin/"
+}

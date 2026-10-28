@@ -1,0 +1,72 @@
+{
+  "task_id": "2026-10-25-sparql-server-integration",
+  "description": "Integrate SPARQL server with task runner for querying task context data",
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Setup SPARQL Server Environment",
+      "actions": [
+        "Install SPARQL server software (Apache Jena Fuseki or similar)",
+        "Configure SPARQL server endpoint",
+        "Set up authentication and security",
+        "Create initial SPARQL database"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 2,
+      "name": "Load Task Context Data",
+      "actions": [
+        "Convert task context JSONs to RDF triples",
+        "Load task metadata into SPARQL",
+        "Load git history into SPARQL",
+        "Load shmem data references into SPARQL",
+        "Create SPARQL indexes for fast queries"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 3,
+      "name": "Integrate with Task Runner Scripts",
+      "actions": [
+        "Add sparql-query.sh script",
+        "Add sparql-import.sh script",
+        "Add sparql-status.sh script",
+        "Update task-context-runner.sh with SPARQL options",
+        "Update task-prefetcher.sh with SPARQL options"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 4,
+      "name": "Add Lean-ctx MCP Integration",
+      "actions": [
+        "Add SPARQL MCP tools to lean-ctx addon",
+        "Register sparql_query MCP tool",
+        "Register sparql_update MCP tool",
+        "Register sparql_import MCP tool",
+        "Test MCP integration with lean-ctx"
+      ],
+      "status": "pending"
+    },
+    {
+      "phase": 5,
+      "name": "Test and Validate Integration",
+      "actions": [
+        "Run SPARQL queries on task context data",
+        "Verify query performance",
+        "Test MCP tools via lean-ctx",
+        "Update documentation",
+        "Commit and push changes"
+      ],
+      "status": "pending"
+    }
+  ],
+  "tools_needed": [
+    "shmem-mcp",
+    "dasl-planner",
+    "lean-ctx",
+    "git",
+    "python3"
+  ]
+}

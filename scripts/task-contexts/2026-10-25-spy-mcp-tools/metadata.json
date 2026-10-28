@@ -1,0 +1,16 @@
+{
+  "id": "2026-10-25-spy-mcp-tools",
+  "type": "task_context",
+  "description": "Surface all shmem-mcp tools to SPARQL GUI and task runner",
+  "created": "2026-10-25T20:11:04.435994",
+  "prefetched": true,
+  "components": {
+    "shmem_stats": true,
+    "shmem_car_search": true,
+    "shmem_car_list": true,
+    "shmem_blocks_query": true,
+    "shmem_blocks_search": true
+  },
+  "path": "2026-10-25-spy-mcp-tools",
+  "namespace": "project/kant-pastebin/scripts/"
+}

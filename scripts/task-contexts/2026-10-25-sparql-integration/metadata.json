@@ -1,0 +1,15 @@
+{
+  "id": "2026-10-25-sparql-integration",
+  "type": "task_context",
+  "description": "SPARQL GUI integration with shmem MCP and task runner",
+  "created": "$(date -Iseconds)",
+  "prefetched": true,
+  "components": {
+    "sparql_gui": true,
+    "sparql_mcp": true,
+    "shmem_mcp": true,
+    "task_runner": true
+  },
+  "path": "2026-10-25-sparql-integration",
+  "namespace": "project/kant-pastebin/scripts/"
+}

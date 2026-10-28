@@ -62,7 +62,7 @@ in
     # Tmpfiles
     # ═══════════════════════════════════════════════════════════
     systemd.tmpfiles.rules = [
-      "d /var/spool/uucp/pastebin 0755 kant kant -"
+      "d /mnt/data1/spool/uucp/pastebin 0755 kant kant -"
       "d /run/nginx 0755 www-data www-data -"
       "d /srv/kant/svg-spool 0755 kant kant -"
       "d /srv/kant/svg-spool/svg2anim-jobs 0755 kant kant -"
@@ -90,7 +90,7 @@ in
       };
       environment = {
         BIND_ADDR = "127.0.0.1:8090";
-        UUCP_SPOOL = "/var/spool/uucp/pastebin";
+        UUCP_SPOOL = "/mnt/data1/spool/uucp/pastebin";
         BASE_PATH = "/pastebin";
         BASE_URL = "https://solana.solfunmeme.com";
         NFT_DIR = "/mnt/data1/time-2026/03-march/13/nft_enriched";

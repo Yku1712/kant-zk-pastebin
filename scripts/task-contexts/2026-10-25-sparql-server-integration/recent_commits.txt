@@ -1,0 +1,10 @@
+e96a4838 Add task-runner-self-improvement and SPARQL server integration tasks
+0b0de779 fix: correct tantivy API calls (Directory::open, doc type inference)
+f6045454 Add task-prefetch-runner task: task prefetch via lean-ctx + shmem
+a2faad85 Add task runner with shmem + lean-ctx integration
+ed73caa9 fix: resolve 3 tantivy compilation errors (E0204, E0282, E0599)
+cc4ce55b Add shmem deployment documentation and complete service verification
+35e22bb1 Add comprehensive shmem call context collection system
+b277c38c Deploy: commit changes for beta deployment
+2aa9b095 deploy: auto-commit 2026-10-20T15:29:23Z
+2c34cea2 fix: set BASE_PATH=/pastebin/beta for proper URL routing in beta deployment

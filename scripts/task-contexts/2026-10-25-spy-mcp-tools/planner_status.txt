@@ -1,0 +1,363 @@
+===========================================================================
+  DASL Master Plan — Formalization Status
+===========================================================================
+
+  L0 Byte-Level CID Signature       [██████████] 4/4 (100%)
+    ✅ CBOR major type constants                          
+    ✅ DAG-CBOR tag(42) = CID encoding formula            
+    ✅ Byte-level Markov transition matrix                
+    ✅ Hecke spectral operators on byte streams           
+
+  L1 CBOR/DAG-CBOR Codec            [██████████] 4/4 (100%)
+    ✅ 8 CBOR major types formalized                      
+    ✅ DAG-CBOR restrictions                              
+    ✅ decode(encode(x)) = x for DAG-CBOR                 
+    ✅ Cross-implementation equivalence                   
+
+  L2 IPLD Data Model                [██████████] 4/4 (100%)
+    ✅ CID v0/v1 structure                                be3886cf-1746-4535-9a4c-718fde
+    ✅ IPLD data model kinds (9 kinds)                    899e7815-31c3-43bf-9e07-7e8199
+    ✅ Content-addressed DAG properties                   899e7815-31c3-43bf-9e07-7e8199
+    ✅ CAR archive format                                 be3886cf-1746-4535-9a4c-718fde
+
+  L3 DASL Types                     [██████████] 9/9 (100%)
+    ✅ DASLType extends IPLD with Link/CID                899e7815-31c3-43bf-9e07-7e8199
+    ✅ MicroLean type system                              unified-dasl
+    ✅ FFI emitters (Rust,C++,JS,Python)                  unified-dasl
+    ✅ 50+ MicroLean correctness theorems                 unified-dasl
+    ✅ ProofOfCoverage (13 sorries) — coverage completeness, verifier soundness, audit properties 
+    ✅ PermissionSystem (5 sorries) — role hierarchy, access grants, audit invariants 
+    ✅ Architecture (4 sorries) — component contracts, interface soundness, compositional properties 
+    ✅ TileSystem (3 sorries) — tile lifecycle, composition, registry invariants 
+    ✅ DASL (1 sorrie) — top-level system invariant       
+
+  L4 Infrastructure                 [████████░░] 6/7 (85%)
+    ✅ Nix reproducible builds                            
+    ✅ System-manager deployment                          
+    ✅ Nginx routing                                      
+    ✅ IPLD CAR shmem storage                             
+    ⬜ Perf/eBPF tracing                                  
+    ✅ BuildMemory (3 sorries) — build error dedup, memory lifecycle, CI invariants 
+    ✅ FuzzCorpus (10 sorries) — corpus coverage, mutation soundness, harness properties 
+
+  L5 Corpus & Testing               [██████████] 4/4 (100%)
+    ✅ 438 vectors, 15 categories                         dasl-audit
+    ✅ 3 Rust decoders                                    dasl-audit
+    ✅ 27×7 fuzz matrix                                   dasl-audit
+    ✅ Cross-impl divergence testing                      be3886cf-1746-4535-9a4c-718fde
+
+  L6 Monster Group                  [████████░░] 5/6 (83%)
+    ✅ 194×194 character table                            monster-char-table
+    ✅ McKay-Thompson / j-invariant                       monster-char-table
+    ✅ Supersingular primes Cl(15,0,0)                    dasl-audit
+    ✅ Orbifold residues                                  
+    ⬜ Borcherds products / Lie algebra                   
+    ✅ FRACTRAN TSP tour                                  monster-tsp
+
+  Total: 36/38 proven (94%)
+
+===========================================================================
+  Aristotle Projects
+===========================================================================
+  ✅ .git... .git                      See project directory
+  ✅ 016b1f96... 016b1f96-d5e9-4d02-b8a6-99336b See project directory
+  ✅ 01b5fefa... 01b5fefa-c6a5-4089-8d5c-721d6f See project directory
+  ✅ 01cf5ff3... 01cf5ff3-cc71-4aef-8b74-1644d2 See project directory
+  ✅ 01d0ff08... 01d0ff08-fca8-4aa0-9aef-08b11f See project directory
+  ✅ 038ed022... 038ed022-f463-4435-b513-3162d5 See project directory
+  ✅ 0454ca39... 0454ca39-6b8f-4dd2-a98f-5196c8 See project directory
+  ✅ 04d3a753... 04d3a753-38cb-4658-8108-2dda88 See project directory
+  ✅ 04efa206... 04efa206-1800-468c-ac18-129100 See project directory
+  ✅ 0571cc4f... 0571cc4f-c0a8-4a72-a94f-932076 See project directory
+  ✅ 059ba9f2... 059ba9f2-d990-4619-8c74-a8f97c See project directory
+  ✅ 05fa2013... 05fa2013-dd33-4518-803c-5e74f1 See project directory
+  ✅ 08a592ba... 08a592ba-5dbf-49a1-9090-54012d See project directory
+  ✅ 09032c9f... 09032c9f-d010-4eea-b3ff-58b98a See project directory
+  ✅ 0919b5f8... 0919b5f8-082f-4333-8eab-6120e8 See project directory
+  ✅ 0919f5f8... 0919f5f8-blueprint        See project directory
+  ✅ 09efef08... 09efef08-734c-4518-8c47-abd8f1 See project directory
+  ✅ 09f8b685... 09f8b685-ee28-4497-81c0-4ac81e See project directory
+  ✅ 0a666e20... 0a666e20-b46c-4492-83eb-60cb24 See project directory
+  ✅ 0a790e79... 0a790e79-5e2e-4053-b7fe-33fc7e See project directory
+  ✅ 0b1f914a... 0b1f914a-a33d-45d5-9a31-89e0a2 See project directory
+  ✅ 0bee9606... 0bee9606-2fa0-4014-821f-2f4712 See project directory
+  ✅ 0e0d1d6d... 0e0d1d6d-ca52-49ec-a049-2ce9aa See project directory
+  ✅ 0f3fc0c9... 0f3fc0c9-c047-4ce1-b2e5-4d30bb See project directory
+  ✅ 0f53cc68... 0f53cc68-d944-4c79-b230-7406b2 See project directory
+  ✅ 0f57b3d5... 0f57b3d5-c1a2-42a6-9a32-e46534 See project directory
+  ✅ 0fa580a5... 0fa580a5-d4fe-4f6d-a8b4-7093ed See project directory
+  ✅ 0fd4acb0... 0fd4acb0-1180-40d0-8507-186fb6 See project directory
+  ✅ 1168fd5d... 1168fd5d-1c43-4c9d-8fc5-a8adcd See project directory
+  ✅ 1233bb96... 1233bb96-7ca9-444b-bca9-a76ce8 See project directory
+  ✅ 125c7abb... 125c7abb-a50c-41e2-98ad-88f220 See project directory
+  ✅ 12a3c973... 12a3c973-b224-4258-81d7-4bbe7b See project directory
+  ✅ 1384cbad... monster-gaussian-primes   15 supersingular primes as Gaussian primes in Z[i]
+  ✅ 140ac380... 140ac380-de52-4507-943f-bbe77d See project directory
+  ✅ 146e3976... 146e3976-629f-42a2-ab68-64cc0a See project directory
+  ✅ 15094d2c... 15094d2c-5f52-459e-969f-e748cb See project directory
+  ✅ 154149d5... 154149d5-e760-491e-a320-065947 See project directory
+  ✅ 1696d7d7... 1696d7d7-9e02-4306-bc93-236f08 See project directory
+  ✅ 17b38b65... 17b38b65-9e5a-4c0e-9184-307b5e See project directory
+  ✅ 17f721ec... 17f721ec-4ae0-4733-b596-b0bbd9 See project directory
+  ✅ 188f2021... 188f2021-5ed4-496d-b253-338110 See project directory
+  ✅ 18a5ce47... 18a5ce47-86b3-4470-836b-e147d1 See project directory
+  ✅ 19303e84... 19303e84-6893-4f99-83f2-1b9cd9 See project directory
+  ✅ 19899410... 19899410-0483-4980-a706-ebac3e See project directory
+  ✅ 19cb55b9... 19cb55b9-513e-4ea5-91bd-16f84b See project directory
+  ✅ 1bb9a9b6... 1bb9a9b6-5e90-4726-927d-5b4f1d See project directory
+  ✅ 1bd43cc1... 1bd43cc1-0556-46fc-8761-5aedcf See project directory
+  ✅ 1bf8ab3c... 1bf8ab3c-a7f7-48d3-a3fa-3f8654 See project directory
+  ✅ 1cbd12a2... 1cbd12a2-0bfb-4a11-9bf5-127c9b See project directory
+  ✅ 1fcb5ebe... 1fcb5ebe-bbab-4c12-bc38-4f1cd4 See project directory
+  ✅ 20558c66... 20558c66-c6eb-4ff6-b224-f28706 See project directory
+  ✅ 221a76bf... 221a76bf-97d8-44f1-942e-946f0a See project directory
+  ✅ 24fbfabd... 24fbfabd-d065-4302-bfae-337e44 See project directory
+  ✅ 25bd5a4e... 25bd5a4e-1882-49b7-849d-332125 See project directory
+  ✅ 26a61d14... 26a61d14-a51c-4fae-b43b-bc0545 See project directory
+  ✅ 2826169a... 2826169a-0779-4623-95d3-0dd817 See project directory
+  ✅ 2874e2e7... 2874e2e7-758b-4c89-8f00-19a599 See project directory
+  ✅ 28fde346... 28fde346-4059-4058-aed4-29797d See project directory
+  ✅ 29da1d20... 29da1d20-747c-45e3-93ae-5c18a3 See project directory
+  ✅ 2b30754c... 2b30754c-c315-4c61-924c-a80023 See project directory
+  ✅ 2c3ce949... 2c3ce949-4a9a-4e34-b8c2-25ce33 See project directory
+  ✅ 2ce895cf... 2ce895cf-f006-4a43-a4cb-1614ed See project directory
+  ✅ 2cefa853... 2cefa853-cba2-462d-bf29-781cd4 See project directory
+  ✅ 2fc2503a... 2fc2503a-320a-473c-bb08-b9764b See project directory
+  ✅ 2fc329f1... 2fc329f1-996b-47bf-8ec4-0407be See project directory
+  ✅ 2fd69956... 2fd69956-dcc5-4c9c-89e2-235b1a See project directory
+  ✅ 30c0ca50... 30c0ca50-8b8f-44d7-9fca-5de74c See project directory
+  ✅ 311c24ba... 311c24ba-267c-4bf1-9dbb-51d22f See project directory
+  ✅ 3175a39f... 3175a39f-bc11-4550-9ca1-ccffa8 See project directory
+  ✅ 32146076... 32146076-6eec-4d4a-8946-74d167 See project directory
+  ✅ 3217fdf8... 3217fdf8-fa6f-4f99-b0d0-1de39a See project directory
+  ✅ 3279cc6f... 3279cc6f-c155-42ed-8027-f042b1 See project directory
+  ✅ 337c461e... 337c461e-6a3f-413c-a12b-9996fa See project directory
+  ✅ 3550e92a... 3550e92a-d30c-4fdd-b27d-6ce438 See project directory
+  ✅ 360d39a0... 360d39a0-6c5e-49d6-8ff0-8fefe5 See project directory
+  ✅ 36c454c2... 36c454c2-6867-453e-b4dd-840f35 See project directory
+  ✅ 37060ef6... 37060ef6-f5b7-4f50-b56f-313bd1 See project directory
+  ✅ 37447a2c... 37447a2c-9dee-46e0-a7d2-6105c4 See project directory
+  ✅ 37b1afab... 37b1afab-e60f-47f8-86cf-55b495 See project directory
+  ✅ 3930ecc8... 3930ecc8-dd34-4cbc-8be7-909a71 See project directory
+  ✅ 39c264b0... 39c264b0-d3b4-4a79-abf3-afbb52 See project directory
+  ✅ 3a0c2241... 3a0c2241-1981-4b37-8bdc-b4df4a See project directory
+  ✅ 3bf4fa6c... 3bf4fa6c-4d34-4d4d-8f78-c827dd See project directory
+  ✅ 3c1bf25e... 3c1bf25e-63cd-4588-9e7c-def987 See project directory
+  ✅ 3caa76e8... 3caa76e8-d30e-4fb4-a983-73cd79 See project directory
+  ✅ 3dc4aa73... 3dc4aa73-b7f4-484f-944e-fd9db6 See project directory
+  ✅ 3e0aacb4... 3e0aacb4-f6f8-4bdb-99ac-04563c See project directory
+  ✅ 3e873046... 3e873046-fda6-4ec9-a018-b0082b See project directory
+  ✅ 3ea1aa35... 3ea1aa35-587e-4d2e-94f0-a84117 See project directory
+  ✅ 3eb96f0c... 3eb96f0c-9c05-47ac-a042-37920a See project directory
+  ✅ 3eca58e1... 3eca58e1-c57f-4602-aa98-165863 See project directory
+  ✅ 3ed1de02... 3ed1de02-65e0-431a-ac4b-d40c18 See project directory
+  ✅ 3fcce1f7... 3fcce1f7-82f2-4193-a88d-978785 See project directory
+  ✅ 42c3a06d... 42c3a06d-18cf-4962-a6eb-b9a973 See project directory
+  ✅ 43e820c5... 43e820c5-5400-452b-9213-dd1ae0 See project directory
+  ✅ 457ce322... 457ce322-4547-4c18-bc51-4c9197 See project directory
+  ✅ 45d700c9... 45d700c9-e906-43a3-84c5-7c11e4 See project directory
+  ✅ 4806a047... 4806a047-d3ca-4681-9152-e89c06 See project directory
+  ✅ 4b7ae00b... 4b7ae00b-c845-4c67-aedd-8d58da See project directory
+  ✅ 4c231928... 4c231928-c5e5-4205-81bc-f32af6 See project directory
+  ✅ 4c7b097c... 4c7b097c-4b5b-4fe1-b2fc-8c83ea See project directory
+  ✅ 4d0efcf5... 4d0efcf5-9746-4093-993b-8d7eba See project directory
+  ✅ 4dd7233e... 4dd7233e-7c92-49d3-87ce-4bf132 See project directory
+  ✅ 4ddd06c0... 4ddd06c0-4674-4f09-b660-0b8946 See project directory
+  ✅ 4e5b6191... 4e5b6191-b906-43ca-a4a9-949c63 See project directory
+  ✅ 4f1b2ed3... 4f1b2ed3-1798-437f-8d8f-470c5d See project directory
+  ✅ 4f5ac625... 4f5ac625-776a-4209-b7dc-96f550 See project directory
+  ✅ 503e59d3... 503e59d3-0665-4d41-a43d-1e23dc See project directory
+  ✅ 5233145b... 5233145b-7d84-4b97-8689-95a5c4 See project directory
+  ✅ 544b93e9... 544b93e9-f451-4b85-9717-6f8bc6 See project directory
+  ✅ 55b10eec... 55b10eec-159f-41cb-8535-48e904 See project directory
+  ✅ 5847f611... 5847f611-78d8-4fee-8bfd-2eb8ef See project directory
+  ✅ 5aadfa05... 5aadfa05-10ea-4318-8b63-9c1a34 See project directory
+  ✅ 5bc6fb80... 5bc6fb80-078c-4857-b82b-56eb47 See project directory
+  ✅ 5bd4ff25... 5bd4ff25-216c-4111-a888-d41cd6 See project directory
+  ✅ 5c897eb2... 5c897eb2-384a-4ceb-8aa3-43e570 See project directory
+  ✅ 5dabb4f0... 5dabb4f0-b8fb-4774-8058-b08ebf See project directory
+  ✅ 5fe4410b... 5fe4410b-9508-4b4a-b440-362f6a See project directory
+  ✅ 60c8488a... 60c8488a-ef38-4ca4-b8cc-3bdd2a See project directory
+  ✅ 619a2341... 619a2341-ec3e-42fa-91ea-7e49b1 See project directory
+  ✅ 61bbb867... 61bbb867-492e-4d09-a15e-e98ca4 See project directory
+  ✅ 62bda899... 62bda899-467f-468d-a48b-e910f9 See project directory
+  ✅ 635127a4... 635127a4-74c4-44dd-9bf7-12b412 See project directory
+  ✅ 64854c3f... 64854c3f-b480-44eb-810a-fda4b6 See project directory
+  ✅ 6617188d... 6617188d-c9c0-42c4-8e78-ded390 See project directory
+  ✅ 6664fe08... 6664fe08-d93f-46ea-8380-b2b0d4 See project directory
+  ✅ 6955d101... dasl-L0-bytelevel         DASL Layer 0: CBOR majors, tag42 encoding, Markov, Hecke
+  ✅ 69713c5d... 69713c5d-d2df-48a9-b693-84e0f7 See project directory
+  ✅ 6a63c71d... 6a63c71d-2b58-4fab-a831-8f4fac See project directory
+  ✅ 6af4742c... 6af4742c-431c-4adf-af2b-84ca0a See project directory
+  ✅ 6cb562f2... 6cb562f2-8a50-4b88-b326-b9a9f5 See project directory
+  ✅ 71786ca5... 71786ca5-7bb8-4f7c-9271-1c83bf See project directory
+  ✅ 732e5d6a... 732e5d6a-3440-4b17-85d6-193202 See project directory
+  ✅ 7399cc0d... 7399cc0d-99f2-4516-8c9e-6da2ef See project directory
+  ✅ 73d95b2b... 73d95b2b-cdea-4e19-8e6c-0babbc See project directory
+  ✅ 73f68407... 73f68407-24ad-4f4e-8451-e54058 See project directory
+  ✅ 76a3e2e7... 76a3e2e7-88b8-47e3-9e4a-a0f3f5 See project directory
+  ✅ 775e32d2... 775e32d2-c3d1-42ad-b52d-609528 See project directory
+  ✅ 77ca4644... 77ca4644-f01f-4055-b146-57028a See project directory
+  ✅ 78bd0170... 78bd0170-4edb-458b-8923-e263f1 See project directory
+  ✅ 797a17c0... 797a17c0-083c-4dad-89a5-123fb1 See project directory
+  ✅ 797a5b85... 797a5b85-1615-4d3e-85e2-649e65 See project directory
+  ✅ 7982a975... 7982a975-e700-4070-8ab2-051d1c See project directory
+  ✅ 798ac753... 798ac753-4dcc-44c1-acbb-ca7a8f See project directory
+  ✅ 79a600ed... 79a600ed-6065-412f-893f-a0ffdd See project directory
+  ✅ 7a027869... 7a027869-d9a0-498b-bf4c-dea783 See project directory
+  ✅ 7a7d224c... 7a7d224c-8e5b-4352-a14c-88a2d2 See project directory
+  ✅ 7d0e6e16... 7d0e6e16-6c89-4db8-92e7-b73956 See project directory
+  ✅ 7d5f01af... 7d5f01af-866b-4f1f-870d-792601 See project directory
+  ✅ 7dc508f3... 7dc508f3-7f85-4026-9d27-607f1a See project directory
+  ✅ 7e873994... 7e873994-d92a-4e38-a7a6-d274d3 See project directory
+  ✅ 7ea0e0ae... 7ea0e0ae-d3d3-48bd-8635-9c8ee7 See project directory
+  ✅ 7ebf4c71... 7ebf4c71-ac46-4438-9c9e-2776ec See project directory
+  ✅ 7ee35ed8... 7ee35ed8-5174-4a13-abe4-f6065f See project directory
+  ✅ 82727d41... 82727d41-2668-4417-a6cf-5a816a See project directory
+  ✅ 83c33a8c... 83c33a8c-e7c8-42ad-b89a-f5d3e1 See project directory
+  ✅ 83dc98fa... 83dc98fa-c1b1-41f6-96df-ef863a See project directory
+  ✅ 8473fb67... 8473fb67-e9e9-4536-ad67-c381e6 See project directory
+  ✅ 84cf4ec8... 84cf4ec8-ba41-4c3e-b64d-ad7424 See project directory
+  ✅ 860c058d... 860c058d-5a0d-4531-a34b-0e9713 See project directory
+  ✅ 87ad0acd... 87ad0acd-73ef-47fe-b55f-9d5579 See project directory
+  ✅ 882ff421... 882ff421-38ad-4bdc-8d40-de94b4 See project directory
+  ✅ 88bc93f4... 88bc93f4-49a4-444d-86ca-0888cf See project directory
+  ✅ 899e7815... 899e7815-31c3-43bf-9e07-7e8199 See project directory
+  ✅ 8b826f23... 8b826f23-b468-4685-b06a-379300 See project directory
+  ✅ 8e719da3... 8e719da3-d2d6-4210-8de1-556158 See project directory
+  ✅ 8f5c106a... 8f5c106a-e52a-46b4-9511-c73633 See project directory
+  ✅ 90c26552... 90c26552-71f0-4eae-8c3b-e2312a See project directory
+  ✅ 927bced3... 927bced3-4f3f-41ca-a1f6-9e098a See project directory
+  ✅ 93038611... 93038611-e9b9-4781-8f93-7048ec See project directory
+  ✅ 931ec461... 931ec461-1f4a-4bb3-a013-c83dc3 See project directory
+  ✅ 933a7a97... 933a7a97-bad9-45ef-b9bd-0b5705 See project directory
+  ✅ 93a4a478... 93a4a478-2e79-41b3-a4bc-b622c6 See project directory
+  ✅ 93aab411... 93aab411-fd06-406c-8a97-248feb See project directory
+  ✅ 9687656f... 9687656f-b32a-4554-b64a-ff8598 See project directory
+  ✅ 97d619b3... 97d619b3-9e9c-4734-b69a-48a885 See project directory
+  ✅ 994668d0... 994668d0-220b-44a2-addc-17f5e4 See project directory
+  ✅ 99ed2770... 99ed2770-3f5a-4b43-919f-0f1221 See project directory
+  ✅ 99fe0c4d... 99fe0c4d-8c28-4748-8328-876c26 See project directory
+  ✅ 99ff647f... 99ff647f-6970-4a86-8c79-8f8398 See project directory
+  ✅ 9aac8698... 9aac8698-8a2d-43dd-9667-5bda13 See project directory
+  ✅ 9c65ba2d... 9c65ba2d-76fa-44d2-8285-ca339c See project directory
+  ✅ a705ad1b... a705ad1b-ed1d-4ab4-b0f6-aa90e6 See project directory
+  ✅ a70685eb... a70685eb-3ac8-4ef2-987a-471095 See project directory
+  ✅ a80e73c0... a80e73c0-b6ca-4453-b261-50436e See project directory
+  ✅ a8ce8fe1... a8ce8fe1-65e5-49cd-81c9-4fc9f6 See project directory
+  ✅ a9db9fb9... dasl-audit                ProofOfCoverage.lean (15 claims)
+  ✅ aa0e7b83... aa0e7b83-1967-48d5-83c6-b45ae4 See project directory
+  ✅ aa79ba66... aa79ba66-2178-4b03-add6-09f1c8 See project directory
+  ✅ ac735b5f... ac735b5f-6fef-4dbb-a32d-dd3073 See project directory
+  ✅ ace2116f... ace2116f-dd9e-4b0b-9c6f-944ad5 See project directory
+  ✅ adebc326... adebc326-5176-4f10-a562-e8da00 See project directory
+  ✅ aeb33075... aeb33075-1091-4ecc-9e00-7a6ae3 See project directory
+  ✅ aristoou... aristo-outputs            See project directory
+  ✅ aristotl... aristotle-chunks          See project directory
+  ✅ b18d3fe6... b18d3fe6-026b-4d13-8173-d977ef See project directory
+  ✅ b29b2f01... b29b2f01-3da4-4006-bff2-83d55f See project directory
+  ✅ b3a1eac1... b3a1eac1-b17e-4dd5-86aa-f26159 See project directory
+  ✅ b4115e89... polygon-zisk              Goldilocks prime p=2^64-2^32+1, NTT roots, modular reduction
+  ✅ b44f22ed... consolidated-dasl         Cl.inclusion_injective + 3 proofs
+  ✅ b49ee870... b49ee870-ac86-465b-8f68-a126e1 See project directory
+  ✅ b4d0275e... b4d0275e-73e6-4725-acb7-7959f4 See project directory
+  ✅ b523e583... b523e583-0c40-4dd1-8ea7-5fda9f See project directory
+  ✅ b53cf58b... b53cf58b-7689-4eb3-aff1-050e19 See project directory
+  ✅ b782936a... b782936a-2f99-4a4f-b1f5-e220bf See project directory
+  ✅ b85f907b... b85f907b-0ecb-4236-ad8f-e7fbe5 See project directory
+  ✅ babcadce... babcadce-620e-423c-88e0-a19bb7 See project directory
+  ✅ bafb24cc... bafb24cc-3a6d-4b52-92ee-1637f5 See project directory
+  ✅ bb89ab2f... bb89ab2f-f958-4651-b1b3-57a752 See project directory
+  ✅ be2947a6... be2947a6-902c-4275-bdca-f00a40 See project directory
+  ✅ be3886cf... be3886cf-1746-4535-9a4c-718fde See project directory
+  ✅ bece5b4d... bece5b4d-0952-44ee-81b9-f9aba9 See project directory
+  ✅ bf8c7107... bf8c7107-3cbc-4907-9ef8-de091e See project directory
+  ✅ c038a247... c038a247-0542-496d-82c2-a22699 See project directory
+  ✅ c1300e15... c1300e15-ce4c-45c5-a8f9-c77153 See project directory
+  ✅ c140fb4b... c140fb4b-5d13-460b-b352-9b338a See project directory
+  ✅ c1602a82... c1602a82-b294-49f7-b0df-2a4edf See project directory
+  ✅ c363e369... c363e369-48d9-4d39-958d-26c007 See project directory
+  ✅ c3d9ded1... c3d9ded1-4a16-4c39-918c-731187 See project directory
+  ✅ c3db9fbc... c3db9fbc-9926-4a21-b7d4-149e4f See project directory
+  ✅ c4748da2... unified-dasl              MicroLean/Weaver/Godel + splitter
+  ✅ c494616c... c494616c-4721-405f-aa10-710989 See project directory
+  ✅ c649c1ba... c649c1ba-7f96-4d4c-a176-58cdab See project directory
+  ✅ c6790e26... c6790e26-b9d3-4583-8b8a-38d0a8 See project directory
+  ✅ c6ac09c4... c6ac09c4-efff-4ef6-95c8-33034a See project directory
+  ✅ cb4f0854... cb4f0854-e338-4df2-9e17-795cc4 See project directory
+  ✅ cbbc19b2... cbbc19b2-5223-4101-a2ec-5fbf26 See project directory
+  ✅ cc90d9d3... cc90d9d3-66b1-4f21-9fd7-4fa894 See project directory
+  ✅ cce386e7... cce386e7-8a70-4681-b4f5-7b9a6e See project directory
+  ✅ cdbc4432... cdbc4432-4568-43fa-a200-762d5e See project directory
+  ✅ ce1ae08d... ce1ae08d-77cc-426f-8002-5434fa See project directory
+  ✅ ce554602... ce554602-7017-4d97-9aa0-9cbfa4 See project directory
+  ✅ ce7ccc29... ce7ccc29-14ba-4e4b-9e3a-bc9ba9 See project directory
+  ✅ cef55bd5... monster-char-full         Full 194×194 + E(23)
+  ✅ cf7316f4... cf7316f4-0bf3-4e38-b8b0-34f430 See project directory
+  ✅ cf768184... cf768184-438f-4c38-ad7d-2226bc See project directory
+  ✅ d075dd95... solfunmeme                FederalModel/Senate/Symphony/Witness.lean
+  ✅ d0d1e912... d0d1e912-7c74-4940-bbe0-e09df6 See project directory
+  ✅ d210cd9c... d210cd9c-de3b-4903-bd11-10dc9c See project directory
+  ✅ d321acb2... d321acb2-ecab-4637-bbd3-408e35 See project directory
+  ✅ d40f4c4a... d40f4c4a-b226-43c4-a783-ddf14b See project directory
+  ✅ d5681ebd... d5681ebd-2cb6-4d6a-bfe5-99ac4b See project directory
+  ✅ d5e52945... d5e52945-6a7c-4d8b-9c9a-5684e1 See project directory
+  ✅ d66b4480... monster-tsp               MonsterHub/TSP/Fractran.lean
+  ✅ d7037a8f... d7037a8f-aa4a-49c8-9ff7-917f9b See project directory
+  ✅ d75c976b... d75c976b-328e-4ea4-abab-725ddc See project directory
+  ✅ d791813a... d791813a-5479-4564-a7e4-ebf797 See project directory
+  ✅ d7fb51e9... d7fb51e9-c3d6-43f7-b198-ee067d See project directory
+  ✅ d8f8063d... d8f8063d-e091-4caa-8df4-e929d4 See project directory
+  ✅ d929441d... d929441d-c0d0-45ef-aa84-e6a479 See project directory
+  ✅ dasllean... dasl-lean                 See project directory
+  ✅ daslpart... dasl-partitions           See project directory
+  ✅ daslsubg... dasl-subgraph             See project directory
+  ✅ db6c3c17... db6c3c17-f4f4-4dc8-a88c-e12fee See project directory
+  ✅ dc171534... dc171534-0a1e-4bdc-8307-12dd39 See project directory
+  ✅ dc6915c2... dc6915c2-ce63-47c6-b27c-eed9c9 See project directory
+  ✅ dcdc7f33... dcdc7f33-e581-493b-99b2-a0547d See project directory
+  ✅ ddb2281b... ddb2281b-bbc6-431e-a4bc-152661 See project directory
+  ✅ ddfe572e... ddfe572e-62a1-4bc1-b96c-ee8b93 See project directory
+  ✅ e0d46cc6... e0d46cc6-4764-4c67-bb2d-da5574 See project directory
+  ✅ e1059d0d... e1059d0d-030a-42d6-8f8b-a21d9f See project directory
+  ✅ e15ece7d... e15ece7d-0382-46da-8774-d6f7da See project directory
+  ✅ e31b6568... e31b6568-b1b6-4d70-8a9a-d50cf6 See project directory
+  ✅ e40780fd... e40780fd-0a5e-4a42-85db-e9a758 See project directory
+  ✅ e4a00d43... e4a00d43-83d8-455f-9281-04e6f5 See project directory
+  ✅ e5adb9dc... e5adb9dc-2c21-4a94-8f90-de91f4 See project directory
+  ✅ e6894679... e6894679-c8bb-48f6-8de0-2f7afc See project directory
+  ✅ e8a77117... e8a77117-967a-4b18-a07c-61b415 See project directory
+  ✅ eb2c3eea... eb2c3eea-18ff-464f-b7d9-92acdb See project directory
+  ✅ eb3d5a09... eb3d5a09-ecec-4646-8633-defe2d See project directory
+  ✅ ec658280... ec658280-f5e7-46dc-81e0-10f8b5 See project directory
+  ✅ ef57ce69... ef57ce69-bff5-473c-b97f-36623d See project directory
+  ✅ efa24f8a... efa24f8a-37a6-4ae1-94a3-e12bd7 See project directory
+  ✅ f023ecce... f023ecce-e0fe-4bd3-8240-80e8bd See project directory
+  ✅ f0bb7632... f0bb7632-28fc-4292-8ce6-4fbd08 See project directory
+  ✅ f122b38e... f122b38e-a52d-4472-af1c-20328a See project directory
+  ✅ f3ae8642... f3ae8642-1061-4e47-8f2f-c4d62d See project directory
+  ✅ f3eef7b4... f3eef7b4-ca60-4e3d-b531-9dbee5 See project directory
+  ✅ f4be147a... f4be147a-7e6b-469e-9c31-64075b See project directory
+  ✅ f59dcd43... f59dcd43-849c-40b6-bdee-e16f2d See project directory
+  ✅ f67cd7d2... f67cd7d2-b8ae-48f9-a7a5-9350ee See project directory
+  ✅ f6d978e8... monster-char-table        MonsterCharacterTable.lean (10 theorems)
+  ✅ f78b51c9... f78b51c9-687f-477e-af7a-fa4d43 See project directory
+  ✅ f7fc1697... f7fc1697-4de3-472b-96ca-3a25c1 See project directory
+  ✅ f82c2362... f82c2362-13f7-44dd-9f8d-4f1f66 See project directory
+  ✅ f86543b9... f86543b9-a102-4dfb-bcdb-5b7b84 See project directory
+  ✅ f90f3b88... f90f3b88-7eef-4703-841b-fb361c See project directory
+  ✅ fa51bcab... fa51bcab-be78-4427-b05c-27c58c See project directory
+  ✅ fb3c2565... fb3c2565-3759-49e5-8105-6b83cb See project directory
+  ✅ fb95bc28... fb95bc28-3b52-4ee2-82bc-edcb66 See project directory
+  ✅ fc60cbbb... fc60cbbb-8393-407e-be18-aab794 See project directory
+  ✅ fcc9e2ee... fcc9e2ee-afef-4120-a152-160898 See project directory
+  ✅ fef52e3d... fef52e3d-3233-4bea-a013-021048 See project directory
+  ✅ ff0fcfe6... ff0fcfe6-1949-47ad-894d-fb3d4a See project directory
+  ✅ gitversi... git-versions              See project directory
+  ✅ mathlibs... mathlib-split             See project directory
+  ✅ sources... sources                   See project directory
+  ✅ splitres... split-results             See project directory
+  ✅ splitsou... split-source              See project directory
+  ✅ test2... test2                     See project directory
+  ✅ unifiedd... unified-dasl              See project directory
+  ✅ workdirs... workdirs                  See project directory

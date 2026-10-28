@@ -1,0 +1,27 @@
+{
+  "task": "merge 4 scheduler scripts into unified system",
+  "scripts": [
+    "schedule-follower-refresh.ts",
+    "follow-proof-protocol.ts",
+    "save-all-follows.ts",
+    "verify-proxy-session.sh"
+  ],
+  "requirements": [
+    "proxy-based login with cookie fallback",
+    "full state/history logging per account",
+    "all followers fetched and saved",
+    "timestamps + PIDs on all fields",
+    "scheduler removes followed targets and divides work",
+    "post-follow verification via head-of-list check",
+    "all web calls logged"
+  ],
+  "files_created": [
+    "docs/MERGE_SCRIPTS_PLAN.md",
+    "docs/MERGE_SUMMARY_REPORT.md",
+    "tasks/2026-09-19-scheduler-scripts-merge/INDEX.md",
+    "tasks/2026-09-19-scheduler-scripts-merge/SYSTEM.md"
+  ],
+  "status": "Phase 1 Complete - Analysis & Planning",
+  "next_phase": "Phase 2 - Core Implementation",
+  "date": "2026-09-19"
+}

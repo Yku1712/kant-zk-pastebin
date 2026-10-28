@@ -1,0 +1,85 @@
+Testing context collection...
+=========================================
+CALL_ID: 2026-10-25T03:01:52Z-674570
+TIMESTAMP: 2026-10-25T03:01:52Z
+PID: 674570
+UID: 1000
+GID: 1000
+USER: mdupont
+CWD: /home/mdupont/pastebin
+COMMAND: query system/
+GIT_REPO: /mnt/data1/kant/pastebin
+GIT_BRANCH: feature/big-merge
+GIT_COMMIT: 35e22bb1b3f98422c397babf8565e8d1a82b4f26
+GIT_DIRTY_COUNT: 5
+GIT_DIRTY_FILES:  M cleanssl
+ M erdfa-publish-investigation
+ M ssl-test
+?? shmem-context-logs/shmem-call-context.log
+?? shmem-logs/
+FD_COUNT: 5
+DISK_SPACE: /dev/md0        7.3T  6.9T   18G 100% /mnt/data1
+SYSTEM_LOAD:  23:01:52 up  5:06,  3 users,  load average: 6.46, 5.51, 5.35
+---
+EXIT_CODE: 0
+RESULT_SUMMARY:
+  Type: json_object_blocks_0
+  Size: 48 bytes
+=========================================
+
+=========================================
+CALL_ID: 2026-10-25T03:01:52Z-674617
+TIMESTAMP: 2026-10-25T03:01:52Z
+PID: 674617
+UID: 1000
+GID: 1000
+USER: mdupont
+CWD: /home/mdupont/pastebin
+COMMAND: get project/twitterstorm/scheduler-merge-task
+GIT_REPO: /mnt/data1/kant/pastebin
+GIT_BRANCH: feature/big-merge
+GIT_COMMIT: 35e22bb1b3f98422c397babf8565e8d1a82b4f26
+GIT_DIRTY_COUNT: 5
+GIT_DIRTY_FILES:  M cleanssl
+ M erdfa-publish-investigation
+ M ssl-test
+?? shmem-context-logs/shmem-call-context.log
+?? shmem-logs/
+FD_COUNT: 5
+DISK_SPACE: /dev/md0        7.3T  6.9T   18G 100% /mnt/data1
+SYSTEM_LOAD:  23:01:52 up  5:06,  3 users,  load average: 6.46, 5.51, 5.35
+---
+EXIT_CODE: 0
+RESULT_SUMMARY:
+  Type: json_object_blocks_0
+  Size: 880 bytes
+=========================================
+
+=========================================
+CALL_ID: 2026-10-25T03:01:52Z-674668
+TIMESTAMP: 2026-10-25T03:01:52Z
+PID: 674668
+UID: 1000
+GID: 1000
+USER: mdupont
+CWD: /home/mdupont/pastebin
+COMMAND: stats
+GIT_REPO: /mnt/data1/kant/pastebin
+GIT_BRANCH: feature/big-merge
+GIT_COMMIT: 35e22bb1b3f98422c397babf8565e8d1a82b4f26
+GIT_DIRTY_COUNT: 5
+GIT_DIRTY_FILES:  M cleanssl
+ M erdfa-publish-investigation
+ M ssl-test
+?? shmem-context-logs/shmem-call-context.log
+?? shmem-logs/
+FD_COUNT: 5
+DISK_SPACE: /dev/md0        7.3T  6.9T   18G 100% /mnt/data1
+SYSTEM_LOAD:  23:01:52 up  5:06,  3 users,  load average: 6.46, 5.51, 5.35
+---
+EXIT_CODE: 0
+RESULT_SUMMARY:
+  Type: json_object_blocks_0
+  Size: 221 bytes
+=========================================
+

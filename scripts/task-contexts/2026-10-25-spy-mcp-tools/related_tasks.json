@@ -1,0 +1,17 @@
+[
+  {
+    "task_id": "2026-10-03-pastebin-kant-pastebin-build-workflow",
+    "description": "Task runner with shmem + lean-ctx integration",
+    "status": "completed"
+  },
+  {
+    "task_id": "2026-10-25-sparql-gui-integration",
+    "description": "SPARQL GUI integration with task runner",
+    "status": "completed"
+  },
+  {
+    "task_id": "2026-10-25-sparql-gui-server",
+    "description": "SPARQL GUI server task",
+    "status": "completed"
+  }
+]

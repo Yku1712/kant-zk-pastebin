@@ -1,0 +1,14 @@
+{
+  "id": "2026-10-02-pastebin-invite-dead-relay",
+  "type": "task_context",
+  "description": "Task context loaded via lean-ctx + shmem",
+  "created": "2026-10-25T20:11:56.847562",
+  "prefetched": true,
+  "components": {
+    "chats": true,
+    "git": true,
+    "related_tasks": true
+  },
+  "path": "2026-10-02-pastebin-invite-dead-relay",
+  "namespace": "project/kant-pastebin/"
+}
