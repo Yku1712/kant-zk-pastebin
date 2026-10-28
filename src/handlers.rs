@@ -478,6 +478,121 @@ fn bound_filename(filename: String) -> String {
     bounded
 }
 
+/// True if the spool holds a stored file whose stem is exactly `id`
+/// (`<id>.txt` for pastes, `<id>.<ext>` for uploads), excluding sidecars.
+fn alias_target_exists(uucp_dir: &str, id: &str) -> bool {
+    if id.is_empty() || id.contains('/') {
+        return false;
+    }
+    if Path::new(&format!("{}/{}.txt", uucp_dir, id)).is_file() {
+        return true;
+    }
+    fs::read_dir(uucp_dir)
+        .map(|entries| {
+            entries.filter_map(|e| e.ok()).any(|e| {
+                let name = e.file_name();
+                let name = name.to_string_lossy();
+                name.rsplit_once('.')
+                    .map_or(false, |(stem, ext)| stem == id && ext != "cid" && ext != "meta")
+                    && e.path().is_file()
+            })
+        })
+        .unwrap_or(false)
+}
+
+/// Create `path` exclusively (`create_new`) and write `data` to it. An
+/// existing file is never opened or truncated; a file this call created but
+/// could not write completely is removed again.
+fn write_new_file(path: &str, data: &[u8]) -> std::io::Result<()> {
+    let mut f = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+    if let Err(e) = f.write_all(data) {
+        drop(f);
+        let _ = fs::remove_file(path);
+        return Err(e);
+    }
+    Ok(())
+}
+
+/// Whether the current request created the CID alias or found one in place.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AliasClaim {
+    Created,
+    Existing,
+}
+
+/// Publish the CID alias `cid_file -> id` only if no alias exists yet.
+/// An existing alias (valid, dangling, or created concurrently by another
+/// paste or upload) is never overwritten.
+fn claim_cid_alias(cid_file: &str, id: &str) -> std::io::Result<AliasClaim> {
+    match write_new_file(cid_file, id.as_bytes()) {
+        Ok(()) => Ok(AliasClaim::Created),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(AliasClaim::Existing),
+        Err(e) => Err(e),
+    }
+}
+
+/// Append one line to the paste index.
+fn append_index_line(index_file: &str, line: &str) -> std::io::Result<()> {
+    fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(index_file)
+        .and_then(|mut f| f.write_all(line.as_bytes()))
+}
+
+/// 500 response for a paste that could not be stored completely.
+fn persist_failed() -> HttpResponse {
+    HttpResponse::InternalServerError()
+        .json(serde_json::json!({"error": "failed to persist paste"}))
+}
+
+/// Store a spool file under a timestamped id without replacing another
+/// request's file. If the file already exists it is accepted only when it
+/// holds exactly `data` (the same record stored by an identical request in
+/// the same second); any other existing file is a collision and an error.
+fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
+    for _ in 0..50 {
+        match write_new_file(path, data) {
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => match fs::read(path) {
+                Ok(existing) if existing == data => return Ok(()),
+                // An identical request is still writing the file: wait briefly.
+                Ok(existing) if data.starts_with(&existing) => {
+                    std::thread::sleep(std::time::Duration::from_millis(2))
+                }
+                // It failed and removed its partial file: try to create it again.
+                Err(r) if r.kind() == std::io::ErrorKind::NotFound => {}
+                _ => return Err(e),
+            },
+            other => return other,
+        }
+    }
+    Err(std::io::Error::new(
+        std::io::ErrorKind::AlreadyExists,
+        "spool file is still being written by another request",
+    ))
+}
+
+/// Publish `cid_file -> id` for a record that is already stored, with the
+/// rule of `create_paste_inner`: an existing alias is never overwritten.
+fn publish_cid_alias(ctx: &str, cid_file: &str, id: &str) {
+    match claim_cid_alias(cid_file, id) {
+        Ok(AliasClaim::Created) => {}
+        Ok(AliasClaim::Existing) => {
+            warn!(
+                "[{}] CID alias {} already exists; left unchanged",
+                ctx, cid_file
+            )
+        }
+        Err(e) => error!(
+            "[{}] {} stored, but CID alias {} not created: {}",
+            ctx, id, cid_file, e
+        ),
+    }
+}
+
 async fn create_paste_inner(paste: Paste) -> Result<HttpResponse> {
     let content = paste.content.as_deref().unwrap_or("");
 
@@ -526,8 +641,13 @@ async fn create_paste_inner(paste: Paste) -> Result<HttpResponse> {
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
 
-    if std::path::Path::new(&cid_file).exists() {
-        let existing_id = fs::read_to_string(&cid_file).unwrap_or_else(|_| format!("paste_{}", ts));
+    // Reuse an existing CID alias only if it names a paste that is actually
+    // stored; a dangling or unreadable alias is ignored (but not overwritten).
+    let existing_id = fs::read_to_string(&cid_file)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| alias_target_exists(&uucp_dir, s));
+    if let Some(existing_id) = existing_id {
         return Ok(HttpResponse::Ok().json(Response {
             id: existing_id.clone(),
             cid: local_cid.clone(),
@@ -567,20 +687,12 @@ async fn create_paste_inner(paste: Paste) -> Result<HttpResponse> {
         id, title, description, keywords.join(", "), local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), dasl_cid, reply_to_str,
         erdfa_publish::sheaf::sheaf_header(&section),
         content, section.to_rdfa());
-
-    // Fail loudly. These writes used to be `.ok()`, which turned every spool error into a
-    // success response — a paste that could not be written was acknowledged with an id that
-    // then 404'd forever, and the content was silently lost. Surface the error instead.
-    fs::write(&uucp, &paste_content).map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!(
-            "failed to write paste {uucp}: {e}"
-        ))
-    })?;
-    fs::write(&cid_file, &id).map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!(
-            "failed to write cid file {cid_file}: {e}"
-        ))
-    })?;
+    // Persist the paste first. `create_new` refuses to overwrite another
+    // paste with the same filename (same-second collision).
+    if let Err(e) = write_new_file(&uucp, paste_content.as_bytes()) {
+        error!("[create_paste] failed to write paste {}: {}", uucp, e);
+        return Ok(persist_failed());
+    }
 
     let ngrams = tagging::extract_ngrams(content, 3, 10);
 
@@ -607,12 +719,23 @@ async fn create_paste_inner(paste: Paste) -> Result<HttpResponse> {
 
     let index_file = format!("{}/index.jsonl", uucp_dir);
     let index_line = format!("{}\n", serde_json::to_string(&index_entry).unwrap());
-    fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&index_file)
-        .and_then(|mut f| std::io::Write::write_all(&mut f, index_line.as_bytes()))
-        .ok();
+    if let Err(e) = append_index_line(&index_file, &index_line) {
+        error!("[create_paste] failed to append index {}: {}", index_file, e);
+        let _ = fs::remove_file(&uucp);
+        return Ok(persist_failed());
+    }
+    // Publish the CID alias last, once the paste is stored and indexed, and
+    // only if no alias exists. No alias is ever overwritten or rolled back.
+    match claim_cid_alias(&cid_file, &id) {
+        Ok(AliasClaim::Created) => {}
+        Ok(AliasClaim::Existing) => {
+            warn!("[create_paste] CID alias {} already exists; left unchanged", cid_file)
+        }
+        Err(e) => error!(
+            "[create_paste] paste {} stored and indexed, but CID alias {} not created: {}",
+            id, cid_file, e
+        ),
+    }
 
     Ok(HttpResponse::Ok().json(Response {
         id: id.clone(),
@@ -716,6 +839,16 @@ pub async fn get_file(path: web::Path<String>) -> Result<HttpResponse> {
     }
 }
 
+/// A paste id names exactly one spool file (`<id>.txt`, `<id>.<ext>.meta`).
+/// Reject ids that are empty, hidden/relative (`.`/`..`), contain a path
+/// separator or control character, or are too long for a filename.
+fn is_safe_paste_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 251
+        && !id.starts_with('.')
+        && !id.chars().any(|c| c == '/' || c == '\\' || c.is_control())
+}
+
 /// GET /paste/{id} - View paste
 #[utoipa::path(
     get,
@@ -737,10 +870,16 @@ pub async fn get_paste(
     let base_url = env::var("BASE_URL").unwrap_or_else(|_| "http://localhost:8090".to_string());
     let git_commit = option_env!("GIT_COMMIT").unwrap_or("unknown");
     let build_time = option_env!("BUILD_TIME").unwrap_or("unknown");
-    let id = resolve_cid_alias(&uucp_dir, &id);
-
+    // Validate the raw id before it reaches the filesystem, then validate
+    // again what the alias resolved to.
+    if !is_safe_paste_id(&id) {
+        return Ok(HttpResponse::BadRequest().body("Invalid paste id"));
+    }
     // A CID permalink (bafk...) is an alias: resolve it to the real paste id.
     let id = resolve_cid_alias(&uucp_dir, &id);
+    if !is_safe_paste_id(&id) {
+        return Ok(HttpResponse::NotFound().body("Paste not found"));
+    }
 
     // Load index for prev/next/related
     let index_file = format!("{}/index.jsonl", uucp_dir);
@@ -760,18 +899,9 @@ pub async fn get_paste(
     });
     let next_id = current_idx.and_then(|i| entries.get(i + 1).map(|e| &e.id));
 
-    let content = if let Ok(dir_entries) = fs::read_dir(&uucp_dir) {
-        dir_entries
-            .filter_map(std::result::Result::ok)
-            .find(|e| {
-                let name = e.file_name();
-                let name_str = name.to_string_lossy();
-                name_str.contains(&id) && name_str.ends_with(".txt")
-            })
-            .and_then(|e| fs::read_to_string(e.path()).ok())
-    } else {
-        None
-    };
+    // Exact lookup: a text paste is stored as `<id>.txt`. Never select a
+    // file by substring or by directory enumeration order.
+    let content = fs::read_to_string(std::path::Path::new(&uucp_dir).join(format!("{}.txt", id))).ok();
 
     // Check for uploaded file with .meta sidecar
     let is_file = content.is_none();
@@ -1417,22 +1547,33 @@ pub async fn get_paste_split(path: web::Path<String>) -> Result<HttpResponse> {
     let id = path.into_inner();
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
     let base_path = env::var("BASE_PATH").unwrap_or_else(|_| "".to_string());
+    // A paste id is a spool filename stem: reject ids that are empty,
+    // hidden/relative (`.`/`..`), contain a path separator or control
+    // character, or are too long for a filename.
+    let is_safe_id = |s: &str| {
+        !s.is_empty()
+            && s.len() <= 251
+            && !s.starts_with('.')
+            && !s.chars().any(|c| c == '/' || c == '\\' || c.is_control())
+    };
+    if !is_safe_id(&id) {
+        return Ok(HttpResponse::BadRequest().body("Invalid paste id"));
+    }
+    // A CID permalink (bafk...) is an alias: resolve it to the real paste id.
+    let id = resolve_cid_alias(&uucp_dir, &id);
+    if !is_safe_id(&id) {
+        return Ok(HttpResponse::NotFound().body("Paste not found"));
+    }
     let entries: Vec<PasteIndex> = fs::read_to_string(format!("{}/index.jsonl", uucp_dir))
         .unwrap_or_default()
         .lines()
         .filter_map(|line| serde_json::from_str::<PasteIndex>(line).ok())
         .collect();
 
-    let content = fs::read_dir(&uucp_dir).ok().and_then(|dir_entries| {
-        dir_entries
-            .filter_map(std::result::Result::ok)
-            .find(|e| {
-                let name = e.file_name();
-                let name_str = name.to_string_lossy();
-                name_str.contains(&id) && name_str.ends_with(".txt")
-            })
-            .and_then(|e| fs::read_to_string(e.path()).ok())
-    });
+    // Exact lookup: a text paste is stored as `<id>.txt`. Never select a
+    // file by substring or by directory enumeration order.
+    let content =
+        fs::read_to_string(std::path::Path::new(&uucp_dir).join(format!("{}.txt", id))).ok();
 
     let Some(content) = content else {
         return Ok(HttpResponse::NotFound().body("Paste not found"));
@@ -3608,8 +3749,20 @@ async fn create_chunked_paste(
         content,
         section.to_rdfa()
     );
-    fs::write(&uucp, paste_content).ok();
-    fs::write(format!("{}/{}.cid", uucp_dir, local_cid), &id).ok();
+    if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
+        error!(
+            "[create_chunked_paste] failed to write paste {}: {}",
+            uucp, e
+        );
+        return Err(actix_web::error::ErrorInternalServerError(
+            "failed to persist paste",
+        ));
+    }
+    publish_cid_alias(
+        "create_chunked_paste",
+        &format!("{}/{}.cid", uucp_dir, local_cid),
+        &id,
+    );
 
     let index_entry = PasteIndex {
         id: id.clone(),
@@ -4063,12 +4216,7 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
     hasher.update(ts.as_bytes());
     let session_id = hex::encode(&hasher.finalize())[..16].to_string();
 
-    // Store for later access
     let entry_count = result.entries.len();
-    ARCHIVE_STORE
-        .lock()
-        .unwrap()
-        .insert(session_id.clone(), result);
 
     // ── Register the archive file itself in the spool + index ──────────
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
@@ -4088,15 +4236,27 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
         .to_string();
     let uucp = format!("{}/{}", uucp_dir, filename);
 
-    // Write the raw archive file to spool
-    fs::write(&uucp, &file_data).ok();
-    // Write metadata sidecar
+    // Metadata sidecar
     let meta = format!("--- {} ---\nTitle: {}\nDescription: {}\nMime: application/octet-stream\nCID: {}\nWitness: {}\nIPFS: {}\nSize: {}\nEntries: {}\n",
         steam_id, title, description, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), file_data.len(), entry_count);
-    fs::write(format!("{}.meta", uucp), &meta).ok();
+    // Write the raw archive file and its sidecar to spool. The archive is
+    // served through the sidecar, so both must be stored before the CID
+    // alias is published.
+    let stored = store_spool_file(&uucp, &file_data)
+        .and_then(|_| store_spool_file(&format!("{}.meta", uucp), meta.as_bytes()));
+    if let Err(e) = stored {
+        error!("[upload_archive] failed to write archive {}: {}", uucp, e);
+        return Ok(HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": "failed to persist archive"})));
+    }
+    // Store for later access
+    ARCHIVE_STORE
+        .lock()
+        .unwrap()
+        .insert(session_id.clone(), result);
     // CID dedup file
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    fs::write(&cid_file, &steam_id).ok();
+    publish_cid_alias("upload_archive", &cid_file, &steam_id);
     // Index entry
     write_index_entry(
         &uucp_dir,
@@ -4454,9 +4614,12 @@ pub async fn archive_generate(
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: allm, archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n{}\n",
         id, post_title, post_description, result.filename, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), allm);
 
-    fs::write(&uucp, &paste_content).ok();
+    if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
+        error!("[archive_generate] failed to write paste {}: {}", uucp, e);
+        return Ok(persist_failed());
+    }
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    fs::write(&cid_file, &id).ok();
+    publish_cid_alias("archive_generate", &cid_file, &id);
     // Index entry so the allm appears in browse
     write_index_entry(
         &uucp_dir,
@@ -4653,9 +4816,12 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n--- From archive: {} ---\n\n{}\n",
         id, entry.path, post_description, result.title, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), result.filename, content);
 
-    fs::write(&uucp, &paste_content).ok();
+    if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
+        error!("[archive_post_file] failed to write paste {}: {}", uucp, e);
+        return Ok(persist_failed());
+    }
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    fs::write(&cid_file, &id).ok();
+    publish_cid_alias("archive_post_file", &cid_file, &id);
 
     // Index entry
     write_index_entry(
