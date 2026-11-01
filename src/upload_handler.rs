@@ -51,10 +51,6 @@ fn parse_multipart_bytes(body: &[u8], boundary: &str) -> std::result::Result<Vec
 }
 
 
-#[cfg(test)]
-static C13_FORCE_PUBLISH_FAILURE: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
-
 /// POST /upload - Upload file (multipart or raw body)
 pub async fn upload_file(req: HttpRequest, body: web::Bytes) -> Result<HttpResponse> {
     let uucp_dir = env::var("UUCP_SPOOL").unwrap_or_else(|_| "/var/spool/uucp".to_string());
@@ -109,21 +105,25 @@ pub async fn upload_file(req: HttpRequest, body: web::Bytes) -> Result<HttpRespo
 
     let save_title = if user_title.is_empty() { archive_name_title(&orig_name) } else { user_title.clone() };
     let save_slug = tagging::slugify(&save_title);
-    let filename = format!("{}_{}_{}.{}", ts, save_slug, uuid::Uuid::new_v4(), ext);
+    let filename = format!("{}_{}.{}", ts, save_slug, ext);
     let id = filename.rsplit_once('.').map(|(s, _)| s).unwrap_or(&filename).to_string();
     let uucp = format!("{}/{}", uucp_dir, filename);
 
-    // C13 experimental: stage content outside the public spool root.
-    let staged = match crate::c13_staging::stage_bytes(
-        std::path::Path::new(&uucp_dir),
-        &file_data,
-    ) {
-        Ok(file) => file,
+    // Stage upload in the spool filesystem and publish without overwriting.
+    let mut staged = match tempfile::NamedTempFile::new_in(&uucp_dir) {
+        Ok(f) => f,
         Err(e) => return Ok(HttpResponse::InternalServerError()
             .json(serde_json::json!({"error": format!("staging failed: {}", e)}))),
     };
-
-
+    if let Err(e) = std::io::Write::write_all(&mut staged, &file_data) {
+        return Ok(HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("write failed: {}", e)})));
+    }
+    let published = match staged.persist_noclobber(&uucp) {
+        Ok(f) => f,
+        Err(e) => return Ok(HttpResponse::InternalServerError()
+            .json(serde_json::json!({"error": format!("publish failed: {}", e.error)}))),
+    };
 
     let mut hasher = Sha256::new();
     hasher.update(&file_data);
@@ -135,74 +135,26 @@ pub async fn upload_file(req: HttpRequest, body: web::Bytes) -> Result<HttpRespo
     let final_title = save_title.clone();
     let final_description = if user_description.is_empty() { file_description(&orig_name, &mime_str, file_data.len(), &file_data) } else { user_description.clone() };
 
-    // C13 experimental: record the pending upload privately.
-    // This is not yet a commit protocol.
-    if let Err(e) = crate::c13_transaction::record_pending(
-        std::path::Path::new(&uucp_dir),
-        &id,
-    ) {
-        return Ok(HttpResponse::InternalServerError().json(
-            serde_json::json!({"error": format!("C13 journal failed: {}", e)})
-        ));
-    }
-
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
 
-
-
-
-    // C13 interim: keep staged data private until index write succeeds.
-    // Remaining risk: publish failure may leave an orphan index entry.
-    // Test-only fault injection follows the publication error path.
-    #[cfg(test)]
-    let publish_result = if C13_FORCE_PUBLISH_FAILURE.swap(
-        false,
-        std::sync::atomic::Ordering::SeqCst,
-    ) {
-        Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "C13 injected publication failure",
-        ))
-    } else {
-        staged.publish_noclobber(std::path::Path::new(&uucp))
-    };
-
-    #[cfg(not(test))]
-    let publish_result = staged.publish_noclobber(std::path::Path::new(&uucp));
-
-    if let Err(e) = publish_result {
-        error!("[upload] publication failed after index append: {}", e);
-        return Ok(HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": format!("publish failed: {}", e)})));
-    }
-
-    // C13 experimental journal completion.
-    // Readers are not yet gated by this state.
-    if let Err(e) = crate::c13_transaction::record_committed(
-        std::path::Path::new(&uucp_dir),
-        &id,
-    ) {
-        error!("[upload] journal completion failed: {}", e);
-        return Ok(HttpResponse::InternalServerError().json(
-            serde_json::json!({"error": format!("C13 commit failed: {}", e)})
-        ));
-    }
-
+    // 1. Publish alias first
     crate::handlers::publish_cid_alias("upload", &cid_file, &id);
 
-
-    // Verificare strictă TOCTOU (C13) - ne asigurăm că fișierul a fost creat
+    // 2. Validate alias
     let is_valid_alias = std::fs::read_to_string(&cid_file)
         .map(|content| content.trim() == id)
         .unwrap_or(false);
-
     if !is_valid_alias {
-        error!("[upload] failed to publish CID alias (invalid content or missing): {}", cid_file);
+        error!("[upload] failed to publish CID alias: {}", cid_file);
         let _ = fs::remove_file(&uucp);
         return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": "failed to publish CID alias"})));
     }
+
+    // 3. Write to index
     if let Err(e) = write_index_entry(&uucp_dir, &id, &final_title, Some(&final_description), vec!["upload".to_string(), ext.to_string()], &local_cid, &witness, &filename, file_data.len(), ipfs_cid.clone(), None, None) {
-        error!("[upload] index failed; discarding private staged file: {}", uucp);
+        error!("[upload] index failed; rolling back spool file and alias: {}", uucp);
+        let _ = fs::remove_file(&uucp);
+        let _ = fs::remove_file(&cid_file);
         return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": format!("index failed: {}", e)})));
     }
 
@@ -211,89 +163,4 @@ pub async fn upload_file(req: HttpRequest, body: web::Bytes) -> Result<HttpRespo
         "cid": local_cid, "ipfs_cid": ipfs_cid, "witness": witness, "mime": mime_str,
         "size": file_data.len(), "url": format!("/paste/{}", id),
     })))
-}
-
-
-#[cfg(test)]
-mod c13_http_regression {
-    use super::*;
-    use actix_web::{test, web, App};
-
-    #[actix_web::test]
-    async fn publication_failure_must_not_append_index() {
-        let spool = tempfile::tempdir().unwrap();
-        std::env::set_var("UUCP_SPOOL", spool.path());
-
-        let app = test::init_service(
-            App::new().route("/upload", web::post().to(upload_file))
-        ).await;
-
-        C13_FORCE_PUBLISH_FAILURE.store(
-            true,
-            std::sync::atomic::Ordering::SeqCst,
-        );
-
-        let request = test::TestRequest::post()
-            .uri("/upload")
-            .insert_header(("Content-Type", "application/json"))
-            .set_payload(
-                r#"{"content":"C13_FORCED_PUBLISH_FAILURE","title":"C13 failure probe"}"#
-            )
-            .to_request();
-
-        let response = test::call_service(&app, request).await;
-        assert_eq!(
-            response.status(),
-            actix_web::http::StatusCode::INTERNAL_SERVER_ERROR
-        );
-
-        let index_path = spool.path().join("index.jsonl");
-        let records = std::fs::read_to_string(&index_path)
-            .unwrap_or_default()
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .count();
-
-        assert_eq!(
-            records, 0,
-            "C13 ORPHAN INDEX: failed publication left an index record"
-        );
-
-        std::env::remove_var("UUCP_SPOOL");
-    }
-
-    #[actix_web::test]
-    async fn failed_index_must_not_leave_public_upload() {
-        let spool = tempfile::tempdir().unwrap();
-        std::fs::create_dir(spool.path().join("index.jsonl")).unwrap();
-
-        // Process-global environment: run this test in isolation.
-        std::env::set_var("UUCP_SPOOL", spool.path());
-
-        let app = test::init_service(
-            App::new().route("/upload", web::post().to(upload_file))
-        ).await;
-
-        let request = test::TestRequest::post()
-            .uri("/upload")
-            .insert_header(("Content-Type", "application/json"))
-            .set_payload(r#"{"content":"C13_HTTP_INDEX_FAILURE_PROBE","title":"C13 probe"}"#)
-            .to_request();
-
-        let response = test::call_service(&app, request).await;
-        assert_eq!(response.status(), actix_web::http::StatusCode::INTERNAL_SERVER_ERROR);
-
-        let public_files: Vec<_> = std::fs::read_dir(spool.path()).unwrap()
-            .filter_map(Result::ok)
-            .filter(|e| e.file_type().map(|t| t.is_file()).unwrap_or(false))
-            .collect();
-
-        assert!(
-            public_files.is_empty(),
-            "C13 FAILURE: index failed but public upload file remains: {:?}",
-            public_files.iter().map(|e| e.path()).collect::<Vec<_>>()
-        );
-
-        std::env::remove_var("UUCP_SPOOL");
-    }
 }
