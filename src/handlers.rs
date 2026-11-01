@@ -4652,7 +4652,8 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
     // Write the raw archive file and its sidecar to spool. The archive is
     // served through the sidecar, so both must be stored before the CID
     // alias is published.
-    let stored = store_spool_file(&uucp, &file_data)
+let is_new_file = !std::path::Path::new(&uucp).exists();
+        let stored = store_spool_file(&uucp, &file_data)
         .and_then(|_| store_spool_file(&format!("{}.meta", uucp), meta.as_bytes()));
     if let Err(e) = stored {
         error!("[upload_archive] failed to write archive {}: {}", uucp, e);
@@ -4681,7 +4682,7 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
         Some(session_id.clone()),
     ) {
         error!("[archive_upload] index failed; rolling back: {}", uucp);
-        let _ = fs::remove_file(&uucp);
+        if is_new_file { let _ = fs::remove_file(&uucp); }
         return Ok(persist_failed());
     }
     publish_cid_alias("upload_archive", &cid_file, &steam_id);
@@ -5027,7 +5028,8 @@ pub async fn archive_generate(
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: allm, archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n{}\n",
         id, post_title, post_description, result.filename, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), allm);
 
-    if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
+let is_new_file = !std::path::Path::new(&uucp).exists();
+        if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
         error!("[archive_generate] failed to write paste {}: {}", uucp, e);
         return Ok(persist_failed());
     }
@@ -5047,7 +5049,7 @@ pub async fn archive_generate(
         None,
     ) {
         error!("[archive_generate] index failed; rolling back: {}", uucp);
-        let _ = fs::remove_file(&uucp);
+        if is_new_file { let _ = fs::remove_file(&uucp); }
         return Ok(persist_failed());
     }
     publish_cid_alias("archive_generate", &cid_file, &id);
@@ -5232,7 +5234,8 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n--- From archive: {} ---\n\n{}\n",
         id, entry.path, post_description, result.title, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), result.filename, content);
 
-    if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
+let is_new_file = !std::path::Path::new(&uucp).exists();
+        if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
         error!("[archive_post_file] failed to write paste {}: {}", uucp, e);
         return Ok(persist_failed());
     }
@@ -5252,7 +5255,7 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
         None,
     ) {
         error!("[archive_post_file] index failed; rolling back: {}", uucp);
-        let _ = fs::remove_file(&uucp);
+        if is_new_file { let _ = fs::remove_file(&uucp); }
         return Ok(persist_failed());
     }
     publish_cid_alias("archive_post_file", &cid_file, &id);
