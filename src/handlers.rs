@@ -237,7 +237,7 @@ pub fn write_index_entry(
     ipfs_cid: Option<String>,
     reply_to: Option<String>,
     root: Option<String>,
-) {
+) -> std::io::Result<()> {
     let ngrams = tagging::extract_ngrams(&format!("{} {}", title, keywords.join(" ")), 3, 10);
     let entry = PasteIndex {
         id: id.to_string(),
@@ -254,6 +254,7 @@ pub fn write_index_entry(
         size,
         uucp_path: format!("{}/{}", uucp_dir, filename),
         root,
+        envelope_witness: None,
     };
     let index_file = format!("{}/index.jsonl", uucp_dir);
     let line = format!("{}\n", serde_json::to_string(&entry).unwrap());
@@ -262,7 +263,6 @@ pub fn write_index_entry(
         .append(true)
         .open(&index_file)
         .and_then(|mut f| std::io::Write::write_all(&mut f, line.as_bytes()))
-        .ok();
 }
 
 pub fn clean_field(value: &str) -> String {
@@ -956,7 +956,7 @@ fn persist_failed() -> HttpResponse {
 /// request's file. If the file already exists it is accepted only when it
 /// holds exactly `data` (the same record stored by an identical request in
 /// the same second); any other existing file is a collision and an error.
-fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
+pub(crate) fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
     for _ in 0..50 {
         match write_new_file(path, data) {
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => match fs::read(path) {
@@ -980,7 +980,7 @@ fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
 
 /// Publish `cid_file -> id` for a record that is already stored, with the
 /// rule of `create_paste_inner`: an existing alias is never overwritten.
-fn publish_cid_alias(ctx: &str, cid_file: &str, id: &str) {
+pub(crate) fn publish_cid_alias(ctx: &str, cid_file: &str, id: &str) {
     match claim_cid_alias(cid_file, id) {
         Ok(AliasClaim::Created) => {}
         Ok(AliasClaim::Existing) => {
@@ -4009,7 +4009,7 @@ pub async fn api_bundle(body: web::Json<serde_json::Value>) -> Result<HttpRespon
         "format": "dag-cbor",
         "cbor_size": cbor_bytes.len(),
         "url": format!("/paste/{}", id),
-        "download_url": format!("/file/{}", id),
+        "download_url": format!("/file/{}.cbor", id),
     })))
 }
 
@@ -4666,9 +4666,7 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
         .insert(session_id.clone(), result);
     // CID dedup file
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    publish_cid_alias("upload_archive", &cid_file, &steam_id);
-    // Index entry
-    write_index_entry(
+    if let Err(e) = write_index_entry(
         &uucp_dir,
         &steam_id,
         &title,
@@ -4681,7 +4679,12 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
         ipfs_cid,
         None,
         Some(session_id.clone()),
-    );
+    ) {
+        error!("[archive_upload] index failed; rolling back: {}", uucp);
+        let _ = fs::remove_file(&uucp);
+        return Ok(persist_failed());
+    }
+    publish_cid_alias("upload_archive", &cid_file, &steam_id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "session_id": session_id,
@@ -5029,9 +5032,7 @@ pub async fn archive_generate(
         return Ok(persist_failed());
     }
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    publish_cid_alias("archive_generate", &cid_file, &id);
-    // Index entry so the allm appears in browse
-    write_index_entry(
+    if let Err(e) = write_index_entry(
         &uucp_dir,
         &id,
         &post_title,
@@ -5044,7 +5045,12 @@ pub async fn archive_generate(
         ipfs_cid,
         None,
         None,
-    );
+    ) {
+        error!("[archive_generate] index failed; rolling back: {}", uucp);
+        let _ = fs::remove_file(&uucp);
+        return Ok(persist_failed());
+    }
+    publish_cid_alias("archive_generate", &cid_file, &id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "id": id,
@@ -5231,10 +5237,7 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
         return Ok(persist_failed());
     }
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
-    publish_cid_alias("archive_post_file", &cid_file, &id);
-
-    // Index entry
-    write_index_entry(
+    if let Err(e) = write_index_entry(
         &uucp_dir,
         &id,
         &entry.path,
@@ -5247,7 +5250,12 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
         ipfs_cid,
         None,
         None,
-    );
+    ) {
+        error!("[archive_post_file] index failed; rolling back: {}", uucp);
+        let _ = fs::remove_file(&uucp);
+        return Ok(persist_failed());
+    }
+    publish_cid_alias("archive_post_file", &cid_file, &id);
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "id": id,
@@ -5762,7 +5770,13 @@ pub async fn api_split_upload(body: web::Json<serde_json::Value>) -> Result<Http
         let paste_content = format!("--- {} ---\nTitle: {} (chunk {}/{})\nKeywords: split, chunk\nCID: {}\nWitness: {}\n\n{}\n",
             id, title, i + 1, overlapped.len(), local_cid, witness, chunk);
 
-        fs::write(&uucp, &paste_content).ok();
+        // Never overwrite an existing split fragment on an ID collision.
+        if let Err(e) = write_new_file(&uucp, paste_content.as_bytes()) {
+            return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": format!("write failed: {}", e)})));
+        }
+        if let Err(e) = append_index_line(&format!("{}/index.jsonl", uucp_dir), &format!("{{\"id\":\"{}\"}}\n", id)) {
+            return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": format!("index failed: {}", e)})));
+        }
         chunk_ids.push(id);
     }
 
@@ -6640,7 +6654,7 @@ mod tests {
         );
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn similarity_score_prefers_shared_keywords_and_content_terms() {
         let source_terms = vec!["rust".to_string(), "nix".to_string(), "flake".to_string()];
         let source_keywords = vec!["rust".to_string(), "nix".to_string()];
@@ -6683,7 +6697,7 @@ mod tests {
         assert!(shared_score > unrelated_score);
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn split_export_text_respects_max_bytes_on_line_boundaries() {
         let content = "alpha\nbeta\ngamma\n";
         let parts = split_export_text("abc/123", content, 8);
@@ -6695,7 +6709,7 @@ mod tests {
         assert_eq!(parts[2].1, "gamma\n");
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn percent_decode_handles_plus_and_all_escapes() {
         // the old fixed table missed these
         assert_eq!(percent_decode("a+b"), "a b");
@@ -6709,7 +6723,7 @@ mod tests {
         assert_eq!(percent_decode("caf%C3%A9"), "café");
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn parse_query_param_decodes_colons_and_plus() {
         let uri = "/api/search?q=2026-09-10T11%3A14%3A16&limit=5";
         assert_eq!(parse_query_param(uri, "q").as_deref(), Some("2026-09-10T11:14:16"));
@@ -6718,7 +6732,7 @@ mod tests {
         assert_eq!(parse_query_param(plus, "q").as_deref(), Some("kant invite"));
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn read_paste_content_strips_escaped_rdfa_footer_and_keeps_html_content() {
         let dir = std::env::temp_dir().join("kant-paste-test");
         let _ = std::fs::create_dir_all(&dir);
@@ -6736,12 +6750,12 @@ mod tests {
         let _ = std::fs::remove_file(&path);
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn bound_filename_leaves_short_names_alone() {
         assert_eq!(bound_filename("20261003_120000_probe.txt".to_string()), "20261003_120000_probe.txt");
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn bound_filename_keeps_the_title_prefix_when_keywords_blow_up() {
         // Regression: auto_tag emits a repo:... tag per line mentioning github.com, so a
         // real 40MB paste produced a 1412-byte slug. That overran ext4's 255-byte
@@ -6758,7 +6772,7 @@ mod tests {
         assert!(bounded.starts_with("20261003_120000_my_title_"), "title prefix preserved");
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn bound_filename_never_splits_a_multibyte_char() {
         // slugify keeps alphanumeric Unicode letters, so the cut point can land mid-char.
         let bounded = bound_filename(format!("20261003_120000_{}.txt", "\u{4e2d}".repeat(200)));
@@ -6768,7 +6782,7 @@ mod tests {
         assert!(std::str::from_utf8(bounded.as_bytes()).is_ok());
     }
 
-    #[test]
+    #[::core::prelude::v1::test]
     fn bounded_filename_survives_a_real_filesystem_write() {
         let dir = std::env::temp_dir().join("kant-paste-test-bound");
         let _ = std::fs::create_dir_all(&dir);
