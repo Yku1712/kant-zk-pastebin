@@ -956,11 +956,11 @@ fn persist_failed() -> HttpResponse {
 /// request's file. If the file already exists it is accepted only when it
 /// holds exactly `data` (the same record stored by an identical request in
 /// the same second); any other existing file is a collision and an error.
-pub(crate) fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
+pub(crate) fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<bool> {
     for _ in 0..50 {
         match write_new_file(path, data) {
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => match fs::read(path) {
-                Ok(existing) if existing == data => return Ok(()),
+                Ok(existing) if existing == data => return Ok(false),
                 // An identical request is still writing the file: wait briefly.
                 Ok(existing) if data.starts_with(&existing) => {
                     std::thread::sleep(std::time::Duration::from_millis(2))
@@ -969,7 +969,8 @@ pub(crate) fn store_spool_file(path: &str, data: &[u8]) -> std::io::Result<()> {
                 Err(r) if r.kind() == std::io::ErrorKind::NotFound => {}
                 _ => return Err(e),
             },
-            other => return other,
+            Ok(_) => return Ok(true),
+            Err(e) => return Err(e),
         }
     }
     Err(std::io::Error::new(
@@ -4652,13 +4653,16 @@ pub async fn upload_archive(mut payload: actix_multipart::Multipart) -> Result<H
     // Write the raw archive file and its sidecar to spool. The archive is
     // served through the sidecar, so both must be stored before the CID
     // alias is published.
-let is_new_file = !std::path::Path::new(&uucp).exists();
-        let stored = store_spool_file(&uucp, &file_data)
-        .and_then(|_| store_spool_file(&format!("{}.meta", uucp), meta.as_bytes()));
-    if let Err(e) = stored {
-        error!("[upload_archive] failed to write archive {}: {}", uucp, e);
-        return Ok(HttpResponse::InternalServerError()
-            .json(serde_json::json!({"error": "failed to persist archive"})));
+let is_new_file = match store_spool_file(&uucp, &file_data) {
+        Ok(created) => created,
+        Err(e) => {
+            error!("[upload_archive] failed to write archive {}: {}", uucp, e);
+            return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": "failed to persist archive"})));
+        }
+    };
+    if let Err(e) = store_spool_file(&format!("{}.meta", uucp), meta.as_bytes()) {
+        error!("[upload_archive] failed to write meta {}: {}", uucp, e);
+        return Ok(HttpResponse::InternalServerError().json(serde_json::json!({"error": "failed to persist archive"})));
     }
     // Store for later access
     ARCHIVE_STORE
@@ -5028,11 +5032,13 @@ pub async fn archive_generate(
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: allm, archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n{}\n",
         id, post_title, post_description, result.filename, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), allm);
 
-let is_new_file = !std::path::Path::new(&uucp).exists();
-        if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
-        error!("[archive_generate] failed to write paste {}: {}", uucp, e);
-        return Ok(persist_failed());
-    }
+let is_new_file = match store_spool_file(&uucp, paste_content.as_bytes()) {
+        Ok(created) => created,
+        Err(e) => {
+            error!("[archive_generate] failed to write paste {}: {}", uucp, e);
+            return Ok(persist_failed());
+        }
+    };
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
     if let Err(e) = write_index_entry(
         &uucp_dir,
@@ -5234,11 +5240,13 @@ pub async fn archive_post_file(path: web::Path<(String, usize)>) -> Result<HttpR
     let paste_content = format!("--- {} ---\nTitle: {}\nDescription: {}\nKeywords: archive, {}\nCID: {}\nWitness: {}\nIPFS: {}\n\n--- From archive: {} ---\n\n{}\n",
         id, entry.path, post_description, result.title, local_cid, witness, ipfs_cid.as_deref().unwrap_or(""), result.filename, content);
 
-let is_new_file = !std::path::Path::new(&uucp).exists();
-        if let Err(e) = store_spool_file(&uucp, paste_content.as_bytes()) {
-        error!("[archive_post_file] failed to write paste {}: {}", uucp, e);
-        return Ok(persist_failed());
-    }
+let is_new_file = match store_spool_file(&uucp, paste_content.as_bytes()) {
+        Ok(created) => created,
+        Err(e) => {
+            error!("[archive_post_file] failed to write paste {}: {}", uucp, e);
+            return Ok(persist_failed());
+        }
+    };
     let cid_file = format!("{}/{}.cid", uucp_dir, local_cid);
     if let Err(e) = write_index_entry(
         &uucp_dir,
