@@ -14,7 +14,7 @@ Frozen candidate `d53b4ca8cafbaea5cf11bbb508bb75ced5081585` was fetched from Git
 | SQLite faults and reconciliation crash | VERIFIED against real Rust and bundled SQLite | Invalid database bytes, missing parent and writer contention return typed SQLite errors. A separate SIGKILL during lookup reconciliation, after the receipt observation and before verification returns, leaves UNRESOLVED. A restarted lookup confirms only after fixture evidence succeeds. No second submit occurs. |
 | Storage failures beyond process crashes | NOT TESTED | Device errors during fsync, sudden power loss, disk-full commit failures, multiprocess provider publication stress, and deployment filesystems. |
 
-The separate [defensive suite](../tests/agent2_adversarial.rs) adds eight passing tests. The [local destination suite](experimental/tests/local_destination.rs) adds three. The two ignored test functions are subprocess entry points exercised by their parent tests. [Expanded run](evidence/review.log)
+The separate [defensive suite](../tests/adversarial_security_suite.rs) adds eight passing tests. The [local destination suite](experimental/tests/local_destination.rs) adds three. The two ignored test functions are subprocess entry points exercised by their parent tests. [Expanded run](evidence/review.log)
 
 ## Review findings
 
