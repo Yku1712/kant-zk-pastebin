@@ -1,0 +1,21 @@
+[package]
+name = "zos-unixfs-readback"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[features]
+int07 = ["dep:zos-int07-core"]
+
+[dependencies]
+cid = "0.11.3"
+data-encoding = "2.11.1"
+sha2 = "0.10.9"
+zos-int07-core = { path = "../..", optional = true }
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "1", features = ["fs"] }
