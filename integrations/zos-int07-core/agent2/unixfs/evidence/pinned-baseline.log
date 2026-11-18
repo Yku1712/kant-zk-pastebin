@@ -1,0 +1,181 @@
+
+$ git rev-parse HEAD
+dc748bb007e458bb88fb4b24647e40809b188d5c
+[exit 0]
+
+$ sha256sum -c SHA256SUMS
+.gitignore: OK
+AGENT_2_HANDOFF.md: OK
+Cargo.lock: OK
+Cargo.toml: OK
+INT07_20_CONTRACT_AUDIT.md: OK
+INT07_22_SQLITE_RECOVERY.md: OK
+INT07_23_ADVERSARIAL_REPORT.md: OK
+INT07_23_FINDINGS.md: OK
+INT07_26_SECURITY_HARDENING.md: OK
+INT07_INDEPENDENT_VERIFICATION.md: OK
+LICENSE: OK
+README.md: OK
+agent2/HANDOFF_PRIMARY.md: OK
+agent2/INT07_23_ADVERSARIAL_REPORT.md: OK
+agent2/INT07_24_EXPERIMENTAL.patch: OK
+agent2/INT07_24_INTEGRATION_DESIGN.md: OK
+agent2/INT07_25_FINAL_AUDIT.md: OK
+agent2/evidence/frozen.log: OK
+agent2/evidence/manifest-comparison.log: OK
+agent2/evidence/patch.log: OK
+agent2/evidence/review.log: OK
+agent2/experimental/.gitignore: OK
+agent2/experimental/Cargo.lock: OK
+agent2/experimental/Cargo.toml: OK
+agent2/experimental/src/lib.rs: OK
+agent2/experimental/tests/local_destination.rs: OK
+agent2/int07_26/INT07_26_PROPOSED.patch: OK
+agent2/int07_26/baseline.log: OK
+agent2/int07_26/hardened.log: OK
+agent2/int07_26/pin-git-bytes.log: OK
+agent2/int07_26/pin-regressions.log: OK
+evidence/independent_test.log: OK
+evidence/independent_validation.log: OK
+evidence/toolchain.txt: OK
+evidence/validation.log: OK
+rust-toolchain.toml: OK
+src/journal.rs: OK
+src/journal/tests.rs: OK
+src/lib.rs: OK
+tests/adversarial_security_suite.rs: OK
+tests/int07_26/mod.rs: OK
+tests/int07_26/pinned_regressions.rs: OK
+tests/publication.rs: OK
+[exit 0]
+
+$ cargo test --locked --offline
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling quote v1.0.47
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling typenum v1.20.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling shlex v2.0.1
+   Compiling cc v1.11.2
+   Compiling syn v2.0.119
+   Compiling syn v3.0.10
+   Compiling data-encoding v2.11.1
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling match-lookup v0.1.3
+   Compiling libsqlite3-sys v0.35.0
+   Compiling foldhash v0.1.5
+   Compiling const-str v0.4.3
+   Compiling base256emoji v1.0.2
+   Compiling hashbrown v0.15.5
+   Compiling data-encoding-macro v0.1.21
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling base-x v0.2.11
+   Compiling base45 v3.2.0
+   Compiling unsigned-varint v0.8.0
+   Compiling multihash v0.19.5
+   Compiling multibase v0.9.3
+   Compiling digest v0.10.7
+   Compiling hashlink v0.10.0
+   Compiling smallvec v1.16.5
+   Compiling bitflags v2.13.2
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling cpufeatures v0.2.17
+   Compiling fallible-iterator v0.3.0
+   Compiling cfg-if v1.0.5
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling rusqlite v0.37.0
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.83s
+     Running unittests src/lib.rs (/workspace/work/int10/pinned-target/debug/deps/zos_int07_core-b97297162c37bd53)
+
+running 4 tests
+test journal::tests::crash_worker ... ignored, invoked by the crash test in a disposable child process
+test journal::tests::operation_id_known_vector_and_scope ... ok
+test journal::tests::confirmed_receipt_is_write_once ... ok
+test journal::tests::process_kill_before_and_after_each_commit ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+     Running tests/adversarial_security_suite.rs (/workspace/work/int10/pinned-target/debug/deps/adversarial_security_suite-5af668591d2dedc6)
+
+running 21 tests
+test concurrent_identical_and_conflicting_intents_cannot_dispatch_twice ... ok
+test confirmed_receipt_does_not_bypass_revoked_public_release ... ok
+test corrupt_or_unavailable_database_returns_errors_before_dispatch ... ok
+test crash_child ... ignored, child entry point for process-kill tests
+test confirmed_revision_rejects_conflicting_digest_without_second_submit ... ok
+test hardening::corrupted_receipt_and_schema_fail_closed_and_schema_rejects_inconsistent_rows ... ok
+test hardening::oversized_readback_cannot_confirm_even_if_adapter_ignores_the_budget_error ... ok
+test hardening::release_lease_serializes_revocation_with_dispatch_and_confirmation ... ok
+test hardening::publication_budget_rejects_oversize_before_journaling_and_accepts_exact_limit ... ok
+test hardening::unrelated_capability_does_not_grant_retry_even_with_same_label ... ok
+test identifier_and_witness_boundaries_are_deterministic ... ok
+test inconclusive_lookup_and_default_retry_issue_no_second_submit ... ok
+test hardening::simulated_traversal_requires_complete_payload_and_bounds_work ... ok
+test pinned_regressions::policy_revoked_in_flight_prevents_confirmation_without_automatic_retry ... ok
+test malformed_receipts_and_incomplete_readback_stay_unresolved ... ok
+test release_and_snapshot_must_match_full_intent_before_dispatch ... ok
+test pinned_regressions::restored_cid_uses_same_canonical_shape_and_raw_digest_as_live_evidence ... ok
+test sigkill_during_reconciliation_keeps_operation_unresolved ... ok
+test sigkill_after_dispatch_claim_and_confirmation_preserves_integrity ... ok
+test stale_or_unauthenticated_grants_do_not_dispatch_or_reconcile ... ok
+test sqlite_writer_lock_times_out_without_dispatch ... ok
+
+test result: ok. 20 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 5.84s
+
+     Running tests/publication.rs (/workspace/work/int10/pinned-target/debug/deps/publication-f0a4793296d805c6)
+
+running 8 tests
+test denies_non_public_wrong_tenant_revision_bytes_and_bundles_before_dispatch ... ok
+test concurrent_connections_dispatch_once_and_sqlite_is_unlocked_during_submission ... ok
+test failed_dispatch_stays_unresolved_and_requires_safe_recovery ... ok
+test reconciles_lost_ack_after_reopen_and_reauthorizes_confirmed_receipt ... ok
+test refuses_a_receipt_for_another_operation_with_the_same_body ... ok
+test sqlite_errors_are_returned ... ok
+test receipt_cannot_be_confirmed_from_echoed_metadata_wrong_payload_or_pseudo_cid ... ok
+test verified_raw_cid_persists_and_wrong_multihash_is_rejected ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Doc-tests zos_int07_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ cargo test --locked --offline --manifest-path agent2/experimental/Cargo.toml
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core)
+   Compiling zos-int07-local-destination v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/experimental)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.03s
+     Running unittests src/lib.rs (/workspace/work/int10/pinned-target/debug/deps/zos_int07_local_destination-89e902297eb953cc)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/local_destination.rs (/workspace/work/int10/pinned-target/debug/deps/local_destination-568c4e65c9c18d1c)
+
+running 5 tests
+test committed_provider_write_survives_lost_response_and_reopens_for_readback ... ok
+test concurrent_first_submission_and_explicit_retry_commit_one_provider_record ... ok
+test local_readback_does_not_append_oversize_or_corrupted_payload ... ok
+test revocation_after_local_provider_commit_keeps_bridge_unresolved ... ok
+test provider_limits_input_and_binds_readback_to_operation_and_instance ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.21s
+
+   Doc-tests zos_int07_local_destination
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]

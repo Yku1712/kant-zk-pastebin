@@ -1,0 +1,254 @@
+
+$ git rev-parse HEAD
+dc748bb007e458bb88fb4b24647e40809b188d5c
+[exit 0]
+
+$ uname -sm
+Linux x86_64
+[exit 0]
+
+$ rustc -Vv
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
+[exit 0]
+
+$ cargo -V
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+[exit 0]
+
+$ cc --version
+cc (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+[exit 0]
+
+$ cargo tree --locked --offline --all-features
+zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+├── cid v0.11.3
+│   ├── multibase v0.9.3
+│   │   ├── base-x v0.2.11
+│   │   ├── base256emoji v1.0.2
+│   │   │   ├── const-str v0.4.3
+│   │   │   └── match-lookup v0.1.3 (proc-macro)
+│   │   │       ├── proc-macro2 v1.0.107
+│   │   │       │   └── unicode-ident v1.0.27
+│   │   │       ├── quote v1.0.47
+│   │   │       │   └── proc-macro2 v1.0.107 (*)
+│   │   │       └── syn v2.0.119
+│   │   │           ├── proc-macro2 v1.0.107 (*)
+│   │   │           ├── quote v1.0.47 (*)
+│   │   │           └── unicode-ident v1.0.27
+│   │   ├── base45 v3.2.0
+│   │   ├── data-encoding v2.11.1
+│   │   └── data-encoding-macro v0.1.21
+│   │       ├── data-encoding v2.11.1
+│   │       └── data-encoding-macro-internal v0.1.19 (proc-macro)
+│   │           ├── data-encoding v2.11.1
+│   │           └── syn v3.0.10
+│   │               ├── proc-macro2 v1.0.107 (*)
+│   │               └── unicode-ident v1.0.27
+│   ├── multihash v0.19.5
+│   │   └── unsigned-varint v0.8.0
+│   └── unsigned-varint v0.8.0
+├── data-encoding v2.11.1
+├── rustix v1.1.6
+│   ├── bitflags v2.13.2
+│   └── linux-raw-sys v0.12.1
+├── sha2 v0.10.9
+│   ├── cfg-if v1.0.5
+│   ├── cpufeatures v0.2.17
+│   └── digest v0.10.7
+│       ├── block-buffer v0.10.4
+│       │   └── generic-array v0.14.7
+│       │       └── typenum v1.20.1
+│       │       [build-dependencies]
+│       │       └── version_check v0.9.5
+│       └── crypto-common v0.1.7
+│           ├── generic-array v0.14.7 (*)
+│           └── typenum v1.20.1
+└── zos-int07-core v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core)
+    ├── cid v0.11.3 (*)
+    ├── rusqlite v0.37.0
+    │   ├── bitflags v2.13.2
+    │   ├── fallible-iterator v0.3.0
+    │   ├── fallible-streaming-iterator v0.1.9
+    │   ├── hashlink v0.10.0
+    │   │   └── hashbrown v0.15.5
+    │   │       └── foldhash v0.1.5
+    │   ├── libsqlite3-sys v0.35.0
+    │   │   [build-dependencies]
+    │   │   ├── cc v1.11.2
+    │   │   │   ├── find-msvc-tools v0.1.15
+    │   │   │   └── shlex v2.0.1
+    │   │   ├── pkg-config v0.3.34
+    │   │   └── vcpkg v0.2.15
+    │   └── smallvec v1.16.6
+    └── sha2 v0.10.9 (*)
+[exit 0]
+
+$ cargo fmt --all --check
+[exit 0]
+
+$ cargo build --locked --offline
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling version_check v0.9.5
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling typenum v1.20.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.10
+   Compiling data-encoding v2.11.1
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling const-str v0.4.3
+   Compiling data-encoding-macro v0.1.21
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling base45 v3.2.0
+   Compiling base-x v0.2.11
+   Compiling match-lookup v0.1.3
+   Compiling unsigned-varint v0.8.0
+   Compiling rustix v1.1.6
+   Compiling base256emoji v1.0.2
+   Compiling multibase v0.9.3
+   Compiling multihash v0.19.5
+   Compiling digest v0.10.7
+   Compiling bitflags v2.13.2
+   Compiling linux-raw-sys v0.12.1
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.2.17
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 25.78s
+[exit 0]
+
+$ cargo test --locked --offline
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.06s
+     Running unittests src/lib.rs (/workspace/work/int10/final-target/debug/deps/zos_unixfs_readback-85e66df4c5932413)
+
+running 1 test
+test tests::active_ancestor_is_rejected_before_io ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/readback.rs (/workspace/work/int10/final-target/debug/deps/readback-7d8f6e6233060169)
+
+running 7 tests
+test dag_pb_field_order_and_oversized_length_declarations_are_checked ... ok
+test authentic_wire_inline_data_packed_sizes_and_link_order ... ok
+test independent_block_graph_output_and_time_limits_fail_closed ... ok
+test flatfs_missing_altered_truncated_and_symlinked_blocks_fail_closed ... ok
+test kubo_offline_raw_v0_v1_and_nested_dags_reconstruct_exactly ... ok
+test protobuf_link_and_size_failures_are_distinct ... ok
+test late_block_source_cannot_emit_after_deadline ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests zos_unixfs_readback
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ cargo clippy --locked --offline --all-targets --all-features -- -D warnings
+    Checking typenum v1.20.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling shlex v2.0.1
+   Compiling cc v1.11.2
+    Checking generic-array v0.14.7
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+    Checking const-str v0.4.3
+   Compiling libsqlite3-sys v0.35.0
+    Checking foldhash v0.1.5
+    Checking data-encoding v2.11.1
+    Checking hashbrown v0.15.5
+    Checking data-encoding-macro v0.1.21
+    Checking base256emoji v1.0.2
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking unsigned-varint v0.8.0
+    Checking bitflags v2.13.2
+    Checking base45 v3.2.0
+    Checking base-x v0.2.11
+    Checking multibase v0.9.3
+    Checking multihash v0.19.5
+    Checking digest v0.10.7
+    Checking hashlink v0.10.0
+    Checking cpufeatures v0.2.17
+    Checking cfg-if v1.0.5
+    Checking fallible-iterator v0.3.0
+    Checking fallible-streaming-iterator v0.1.9
+    Checking smallvec v1.16.6
+    Checking sha2 v0.10.9
+    Checking cid v0.11.3
+    Checking linux-raw-sys v0.12.1
+    Checking rustix v1.1.6
+    Checking rusqlite v0.37.0
+    Checking zos-int07-core v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core)
+    Checking zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 27.11s
+[exit 0]
+
+$ cargo build --locked --offline --all-features
+   Compiling foldhash v0.1.5
+   Compiling libsqlite3-sys v0.35.0
+   Compiling hashbrown v0.15.5
+   Compiling fallible-iterator v0.3.0
+   Compiling smallvec v1.16.6
+   Compiling hashlink v0.10.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling rusqlite v0.37.0
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core)
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.92s
+[exit 0]
+
+$ cargo test --locked --offline --all-features
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.00s
+     Running unittests src/lib.rs (/workspace/work/int10/final-target/debug/deps/zos_unixfs_readback-892010d9e21d9e49)
+
+running 1 test
+test tests::active_ancestor_is_rejected_before_io ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/readback.rs (/workspace/work/int10/final-target/debug/deps/readback-e26ef503ad58f8cd)
+
+running 8 tests
+test authentic_wire_inline_data_packed_sizes_and_link_order ... ok
+test dag_pb_field_order_and_oversized_length_declarations_are_checked ... ok
+test independent_block_graph_output_and_time_limits_fail_closed ... ok
+test flatfs_missing_altered_truncated_and_symlinked_blocks_fail_closed ... ok
+test kubo_offline_raw_v0_v1_and_nested_dags_reconstruct_exactly ... ok
+test int07::real_unixfs_readback_gates_int07_confirmation ... ok
+test protobuf_link_and_size_failures_are_distinct ... ok
+test late_block_source_cannot_emit_after_deadline ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests zos_unixfs_readback
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ env RUSTDOCFLAGS=-D\ warnings cargo doc --locked --offline --all-features --no-deps
+ Documenting zos-unixfs-readback v0.1.0 (/workspace/work/int10/repo/integrations/zos-int07-core/agent2/unixfs)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.86s
+   Generated /workspace/work/int10/final-target/doc/zos_unixfs_readback/index.html
+[exit 0]

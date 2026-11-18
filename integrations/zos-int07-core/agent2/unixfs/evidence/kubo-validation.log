@@ -1,0 +1,30 @@
+bde93def3fbae2b86115efca8cbf82ecbe9fc11fcad6c24c204c37e717017ff143cc52987a0f57006561dc9c3fae3cc08e2898fb0bd55a5b70b75e61280df7f5  kubo_v0.36.0_linux-amd64.tar.gz
+/workspace/work/int10/kubo/kubo.tar.gz: OK
+
+$ /workspace/work/int10/kubo/kubo/ipfs version --all
+Kubo version: 0.36.0
+Repo version: 16
+System version: amd64/linux
+Golang version: go1.24.5
+[exit 0]
+
+$ python3 fixtures/generate.py /workspace/work/int10/kubo/kubo/ipfs > regenerated-fixtures.txt
+Kubo version: 0.36.0
+Repo version: 16
+System version: amd64/linux
+Golang version: go1.24.5
+raw-v1 bafkreicrlisyifutdokvekrpazqzi6otddcih42wb2lxgoxnhewpjf7oci 515a258416931b95522a2f06619479d318c483f3560e97733aed392cf497ee12 1 blocks
+file-v0 QmPgWNKLcJ2ufdvreW5bP5aQm2yd6SE6yDRehGjuQbxT2n 295d9a52bec437c7b852824d5534467f7d99249306ebf71fa9c2be615460f798 1 blocks
+empty-v0 QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 1 blocks
+multiblock-v0 QmNU8rQRvfWr86H4SfNwX6229Bj33JucN4rmJCucRrGVrC dec8003172b946eb28490c792d838abbfdb3f99e048469badf1f086521b0e752 5 blocks
+multiblock-v1 bafybeiadwsmiaxpltquwiqd2e53cfjdvb66h3lcrr4yd65swla5yfvhg6e 4401df651c7546ef262bb574e3fea782d943532711bd2bdec6ca12933485dd8a 5 blocks
+nested-v1 bafybeif2zb66emb6vk33i44hge2oirmwitquefoawc4wjsc346xsopeama 7ce096472f5d4fa247736f0bd3946a2fe8bf2af126bee716b1c330a55443cddc 5 blocks
+Every payload independently matched Kubo's offline cat.
+[exit 0]
+
+$ cmp fixtures/kubo-v0.36.0.txt /workspace/work/int10/regenerated-fixtures.txt
+[exit 0]
+
+$ sha256sum fixtures/kubo-v0.36.0.txt
+f81ff587af2b05b1819d477fcd6f11000ad19113ae602373c9deeb93ff6223ec  fixtures/kubo-v0.36.0.txt
+[exit 0]
