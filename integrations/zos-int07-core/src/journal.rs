@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    ArtifactRevision, ConfirmedReceipt, ContentDigest, Error, Intent, OperationState, VerifiedIpfs,
-    valid_identifier,
+    ArtifactRevision, ConfirmedReceipt, ContentDigest, Error, Intent, MAX_CID_BYTES,
+    MAX_IDENTIFIER_BYTES, OperationState, VerifiedIpfs, valid_identifier,
 };
 use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::{path::Path, time::Duration};
@@ -174,9 +174,11 @@ impl Journal {
 fn read_state(connection: &Connection, intent: &Intent) -> Result<Option<OperationState>, Error> {
     let record = connection
         .query_row(
-            "SELECT source, tenant, artifact, revision, digest, destination, state, remote_id, ipfs_cid
+            "SELECT source, tenant, artifact, revision, digest, destination, state,
+                    CASE WHEN length(CAST(remote_id AS BLOB)) > ?2 THEN '' ELSE remote_id END,
+                    CASE WHEN length(CAST(ipfs_cid AS BLOB)) > ?3 THEN '' ELSE ipfs_cid END
              FROM publication WHERE operation = ?1",
-            [intent.operation.0],
+            params![intent.operation.0, MAX_IDENTIFIER_BYTES, MAX_CID_BYTES],
             |row| {
                 Ok((
                     ArtifactRevision {
@@ -206,10 +208,7 @@ fn read_state(connection: &Connection, intent: &Intent) -> Result<Option<Operati
         ("CONFIRMED", Some(remote_id), ipfs) if valid_identifier(&remote_id) => {
             let ipfs = ipfs
                 .map(|value| {
-                    value
-                        .parse()
-                        .map(VerifiedIpfs)
-                        .map_err(|_| Error::JournalConflict)
+                    VerifiedIpfs::parse(&value, binding.digest).map_err(|_| Error::JournalConflict)
                 })
                 .transpose()?;
             Ok(Some(OperationState::Confirmed(ConfirmedReceipt {

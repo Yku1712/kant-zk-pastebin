@@ -9,10 +9,11 @@ use std::{
     time::Duration,
 };
 use zos_int07_core::{
-    ContentDigest, Destination, Error, Intent, ReceiptCandidate, ReceiptEvidence,
+    ContentDigest, Destination, DurableRetry, Error, EvidenceOutput, Intent, MAX_PUBLICATION_BYTES,
+    ReceiptCandidate, ReceiptEvidence,
 };
 
-pub const MAX_BYTES: usize = 1024 * 1024;
+pub const MAX_BYTES: usize = MAX_PUBLICATION_BYTES;
 const APP_ID: i64 = 0x5a4f_4432;
 
 pub struct LocalDestination {
@@ -116,12 +117,16 @@ fn schema(conn: &Connection) -> Result<(i64, i64), Error> {
     ))
 }
 
-fn read_body(conn: &Connection, operation: &str) -> Result<Option<Vec<u8>>, Error> {
+fn read_body(
+    conn: &Connection,
+    operation: &str,
+    max_bytes: usize,
+) -> Result<Option<Vec<u8>>, Error> {
     Ok(conn
         .query_row(
             "SELECT body FROM published_payload WHERE operation = ?1
                 AND length(body) BETWEEN 1 AND ?2",
-            params![operation, MAX_BYTES],
+            params![operation, max_bytes],
             |row| row.get(0),
         )
         .optional()?)
@@ -158,7 +163,7 @@ impl Destination for LocalDestination {
              ON CONFLICT(operation) DO NOTHING",
             params![operation, body],
         )?;
-        if read_body(&tx, &operation)?.as_deref() != Some(body) {
+        if read_body(&tx, &operation, MAX_BYTES)?.as_deref() != Some(body) {
             return Err(Error::JournalConflict);
         }
         tx.commit()?;
@@ -176,6 +181,12 @@ impl Destination for LocalDestination {
         Ok(found.then(|| candidate(intent)))
     }
 
+    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
+        Some(self)
+    }
+}
+
+impl DurableRetry for LocalDestination {
     fn retry_idempotently(
         &self,
         intent: &Intent,
@@ -190,7 +201,8 @@ impl ReceiptEvidence for LocalDestination {
         &self,
         intent: &Intent,
         receipt: &ReceiptCandidate,
-    ) -> Result<Vec<u8>, Error> {
+        out: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
         let expected = candidate(intent);
         if receipt.operation != expected.operation
             || receipt.remote_id != expected.remote_id
@@ -202,15 +214,24 @@ impl ReceiptEvidence for LocalDestination {
         }
         let conn = self.open_connection(OpenFlags::SQLITE_OPEN_READ_ONLY)?;
         self.validate(&conn, intent)?;
-        let body =
-            read_body(&conn, &intent.operation().to_string())?.ok_or(Error::InvalidReceipt)?;
+        let body = read_body(
+            &conn,
+            &intent.operation().to_string(),
+            out.remaining().min(MAX_BYTES),
+        )?
+        .ok_or(Error::InvalidReceipt)?;
         if ContentDigest::of(&body) != expected.witness {
             return Err(Error::DigestMismatch);
         }
-        Ok(body)
+        out.append(&body)
     }
 
-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
+    fn verified_ipfs_bytes(
+        &self,
+        _: &Intent,
+        _: &Cid,
+        _: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
         Err(Error::InvalidReceipt)
     }
 }

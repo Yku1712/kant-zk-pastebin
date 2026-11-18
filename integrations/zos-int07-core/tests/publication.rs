@@ -141,6 +141,12 @@ impl Destination for Remote {
         Ok(self.receipt.lock().unwrap().clone())
     }
 
+    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
+        Some(self)
+    }
+}
+
+impl DurableRetry for Remote {
     fn retry_idempotently(
         &self,
         intent: &Intent,
@@ -170,13 +176,21 @@ struct Evidence {
     ipfs: Option<&'static [u8]>,
 }
 impl ReceiptEvidence for Evidence {
-    fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
-        self.published
-            .map(<[u8]>::to_vec)
-            .ok_or(Error::InvalidReceipt)
+    fn published_bytes(
+        &self,
+        _: &Intent,
+        _: &ReceiptCandidate,
+        out: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
+        out.append(self.published.ok_or(Error::InvalidReceipt)?)
     }
-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
-        self.ipfs.map(<[u8]>::to_vec).ok_or(Error::InvalidReceipt)
+    fn verified_ipfs_bytes(
+        &self,
+        _: &Intent,
+        _: &Cid,
+        out: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
+        out.append(self.ipfs.ok_or(Error::InvalidReceipt)?)
     }
 }
 const EVIDENCE: Evidence = Evidence {

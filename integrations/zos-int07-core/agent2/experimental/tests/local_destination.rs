@@ -14,8 +14,8 @@ use std::{
 };
 use zos_int07_core::{
     ArtifactRevision, AuthorizedSnapshot, AuthorizedSource, BodyKind, ContentDigest, Destination,
-    Error, Intent, Journal, OperationState, PublicationEligibility, Publisher, ReceiptCandidate,
-    ReceiptEvidence, Recovery, Release,
+    DurableRetry, Error, EvidenceSink, Intent, Journal, OperationState, PublicationEligibility,
+    Publisher, ReceiptCandidate, ReceiptEvidence, Recovery, Release,
 };
 use zos_int07_local_destination::{LocalDestination, MAX_BYTES};
 
@@ -153,7 +153,11 @@ fn committed_provider_write_survives_lost_response_and_reopens_for_readback() {
         evidence: &reopened,
     };
     let receipt = reopened.lookup(&intent).unwrap().unwrap();
-    assert_eq!(reopened.published_bytes(&intent, &receipt).unwrap(), BODY);
+    let mut output = EvidenceSink::default();
+    reopened
+        .published_bytes(&intent, &receipt, &mut output)
+        .unwrap();
+    assert_eq!(output.finish().unwrap(), ContentDigest::of(BODY));
     assert!(matches!(
         caller.execute(&mut journal, &(), &intent, Recovery::LookupOnly),
         Ok(OperationState::Confirmed(confirmed)) if confirmed.remote_id() == receipt.remote_id
@@ -189,6 +193,12 @@ impl Destination for Overlap<'_> {
         self.inner.lookup(intent)
     }
 
+    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
+        Some(self)
+    }
+}
+
+impl DurableRetry for Overlap<'_> {
     fn retry_idempotently(
         &self,
         intent: &Intent,
@@ -277,14 +287,135 @@ fn provider_limits_input_and_binds_readback_to_operation_and_instance() {
     .unwrap();
     assert!(local.lookup(&another_scope).unwrap().is_none());
     assert!(matches!(
-        local.published_bytes(&another_scope, &receipt),
+        local.published_bytes(&another_scope, &receipt, &mut EvidenceSink::default()),
         Err(Error::InvalidReceipt)
     ));
     let mut changed = receipt;
     changed.remote_id = "unrelated-record".into();
     assert!(matches!(
-        local.published_bytes(&original, &changed),
+        local.published_bytes(&original, &changed, &mut EvidenceSink::default()),
         Err(Error::InvalidReceipt)
+    ));
+    assert_eq!(temp.stored_count(), 1);
+}
+
+#[test]
+fn local_readback_does_not_append_oversize_or_corrupted_payload() {
+    use zos_int07_core::EvidenceOutput;
+
+    struct LimitedOutput(usize);
+    impl EvidenceOutput for LimitedOutput {
+        fn remaining(&self) -> usize {
+            self.0
+        }
+        fn append(&mut self, _: &[u8]) -> Result<(), Error> {
+            panic!("rejected local payload must never reach the output");
+        }
+    }
+
+    let temp = Temp::new();
+    let local = temp.destination();
+    let intent = intent(local.id(), BODY);
+    let receipt = local.submit(&intent, BODY).unwrap();
+    assert!(matches!(
+        local.published_bytes(&intent, &receipt, &mut LimitedOutput(BODY.len() - 1)),
+        Err(Error::InvalidReceipt)
+    ));
+
+    let db = Connection::open(temp.0.join("provider.sqlite")).unwrap();
+    assert_eq!(
+        db.execute(
+            "UPDATE published_payload SET body = ?1",
+            [b"corrupted persisted content".as_slice()],
+        )
+        .unwrap(),
+        1
+    );
+    assert!(matches!(
+        local.published_bytes(&intent, &receipt, &mut LimitedOutput(MAX_BYTES)),
+        Err(Error::DigestMismatch)
+    ));
+    db.pragma_update(None, "user_version", 99).unwrap();
+    assert!(matches!(local.lookup(&intent), Err(Error::JournalConflict)));
+}
+
+struct PausedAfterCommit<'a> {
+    destination: &'a LocalDestination,
+    committed: SyncSender<()>,
+    finish: Mutex<Receiver<()>>,
+}
+
+impl Destination for PausedAfterCommit<'_> {
+    fn id(&self) -> &str {
+        self.destination.id()
+    }
+
+    fn submit(&self, intent: &Intent, body: &[u8]) -> Result<ReceiptCandidate, Error> {
+        let receipt = self.destination.submit(intent, body)?;
+        self.committed
+            .send(())
+            .map_err(|_| Error::ExternalUnavailable)?;
+        self.finish
+            .lock()
+            .map_err(|_| Error::ExternalUnavailable)?
+            .recv_timeout(Duration::from_secs(10))
+            .map_err(|_| Error::ExternalUnavailable)?;
+        Ok(receipt)
+    }
+
+    fn lookup(&self, intent: &Intent) -> Result<Option<ReceiptCandidate>, Error> {
+        self.destination.lookup(intent)
+    }
+}
+
+#[test]
+fn revocation_after_local_provider_commit_keeps_bridge_unresolved() {
+    use std::sync::atomic::AtomicBool;
+
+    struct PolicyState(Policy, AtomicBool);
+    impl PublicationEligibility for PolicyState {
+        fn permits(&self, intent: &Intent) -> Result<bool, Error> {
+            Ok(self.1.load(SeqCst) && self.0.permits(intent)?)
+        }
+    }
+
+    let temp = Temp::new();
+    let local = temp.destination();
+    let intent = intent(local.id(), BODY);
+    let source = Snapshot(intent.artifact().clone());
+    let policy = PolicyState(Policy(intent.clone()), AtomicBool::new(true));
+    let (committed, written) = sync_channel(1);
+    let (finish, resumed) = sync_channel(1);
+    let destination = PausedAfterCommit {
+        destination: &local,
+        committed,
+        finish: Mutex::new(resumed),
+    };
+    let caller = Publisher {
+        source: &source,
+        eligibility: &policy,
+        destination: &destination,
+        evidence: &local,
+    };
+
+    thread::scope(|scope| {
+        let first =
+            scope.spawn(|| caller.execute(&mut temp.journal(), &(), &intent, Recovery::LookupOnly));
+        written.recv_timeout(Duration::from_secs(10)).unwrap();
+        policy.1.store(false, SeqCst);
+        finish.send(()).unwrap();
+        assert!(matches!(first.join().unwrap(), Err(Error::Ineligible)));
+    });
+    let mut journal = temp.journal();
+    assert_eq!(temp.stored_count(), 1);
+    assert!(local.lookup(&intent).unwrap().is_some());
+    assert_eq!(
+        journal.state(&intent).unwrap(),
+        Some(OperationState::Unresolved)
+    );
+    assert!(matches!(
+        caller.execute(&mut journal, &(), &intent, Recovery::RetryIdempotently),
+        Err(Error::Ineligible)
     ));
     assert_eq!(temp.stored_count(), 1);
 }
