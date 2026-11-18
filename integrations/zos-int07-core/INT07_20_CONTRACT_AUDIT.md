@@ -36,6 +36,30 @@ The in-process `ArtifactService` composes with `AccessPolicy`: `fn publish(&self
 
 In fork `create_paste_inner`, IPFS is attempted before the spool write and the spool write, alias write, and index append can all fail without changing a 200 response. At the audited upstream baseline, the path uses exclusive spool creation, reports index write failure and tries to delete the spool record, then claims the local alias with exclusive creation. The index, spool and flatfs are still separate writes, and a failed or lost response may follow visible external effects. A duplicate-content check is not atomic idempotency for a supplied operation identity. [Fork write ordering](https://github.com/Yku1712/kant-zk-pastebin/blob/81e42b19bc11aa03d7f637c8d9ca62914d67d0fd/src/handlers.rs#L480) · [Baseline write ordering](https://github.com/meta-introspector/kant-zk-pastebin/blob/13d92d97b9b89f9af94a35cb70436035bd2fd05a/src/handlers.rs#L706)
 
+## Additional source-verified constraints
+
+Independent re-reading of the pinned snapshots confirmed these adapter-relevant details. They are production paths unless marked otherwise.
+
+### Artifact MCP boundary
+
+- The production port `src/ports/artifacts.rs:20` declares `fn find_meta(&self, id: &ArtifactId) -> BoxFuture<Result<Option<ArtifactMeta>, AppError>>`. It returns full metadata, including publisher identity fields; only `ArtifactPublicView` deliberately omits `Serialize` and withholds `client_id`, `owner_email`, and `body_sha256` (`src/model/artifact_public_view.rs:3-4,44-53`).
+- `AuthorizedArtifact` and `OwnedArtifact` have private tuple fields (`src/security/access.rs:107,123`). Grants are minted only by `authorize_viewer`, `authorize_publisher_read`, `authorize_publisher_write`, `authorize_publisher_delete`, and `authorize_share` (`:302,441,466,486,521`); `resolve_for_viewer` is at `:547`. An adapter cannot safely construct a grant from a bare `ArtifactMeta`.
+- `publisher_can_publish` (`:367`) and `target_org` (`src/mcp/args.rs:93`) enforce the MCP publication policy. The lower-level `ArtifactService::publish` port does not call them, so exposing that port directly would allow a Reader key or cross-tenant org argument through.
+- `find_meta_by_key` defaults to `Ok(None)` (`src/ports/artifacts.rs:25-34`) and `read_current_thumbnail` defaults to a digest comparison without the production lifecycle read guard (`:69-86`; production override at `src/artifacts/lifecycle/service.rs:190-223`). A real adapter must provide the org-scoped and linearized implementations.
+- Foreign and missing rows are concealed as not found, not reported as authorization failures (`src/security/access.rs:434-501,547-557`). Administrator status is derived only from `org == "admin"` (`src/model/identity.rs:113-122`).
+- The safe production constructor is `ArtifactStore::from_config` (`src/artifacts/lifecycle/mod.rs:245-278`), which initializes and verifies the audit ledger. `new_for_test`, `with_faults`, and `ports::testing::FakeArtifacts` are test-only seams and are not production adapters.
+- The raw route's `cast-pin` rehashes delivered bytes and compares them with the stored revision digest (`src/http/routes/raw.rs:59-80`). The bridge must preserve that canonical SHA-256 semantics.
+
+### Pastebin boundary
+
+- Production Actix routes are limited to the table at `src/main.rs:649-668`: `/paste`, `/paste-form`, `/paste-multipart`, `/upload`, `/file/{id}`, and `/ipfs/{cid}`. The JSON helpers at `src/api.rs:24-74` are compiled but not routed; `src/paste.rs:30-49` and `src/main_old.rs` are not in the compiled module tree. None is a production adapter contract.
+- `src/storage.rs:160-166` contains private no-op IPFS helpers. The Cloudflare worker calls `paste_create`, `paste_get`, and `paste_browse` exports that do not exist in the audited Rust source. `publish_to_nora` is explicitly disabled at `src/plugins/git2nora.rs:299`.
+- `pub trait ContentStore: Send + Sync { fn name(&self) -> &str; fn add(&self, data: &[u8]) -> Option<String>; }` (`src/ipfs.rs:41-46`) is the closest content abstraction, but it carries no operation identity, state, receipt, or verification result.
+- `pub fn local_cid(data: &[u8]) -> String` (`:169-173`) emits `bafk` plus the first 16 SHA-256 bytes as hex. It is not a valid IPFS CID. `pub fn ipfs_add_bytes(data: &[u8]) -> Option<String>` (`:124-151`) returns a local flatfs UnixFS root only; `pub fn ipfs_cat(cid_str: &str) -> Option<Vec<u8>>` (`:153-167`) reads one local block and does not reconstruct or verify a DAG.
+- The response type `pub struct Response { ... }` (`src/model.rs:15-25`) has no receipt field. `witness` is plain hex SHA-256, not a zkTLS proof, and `ipfs_cid` is not a network publication acknowledgment.
+- There is no Rust SQLite crate, SQL transaction layer, operation ID, receipt type, state machine, or replay pass in this commit. SQLite occurrences are confined to separate Node/JS relay stores. `journalctl` references are operating-system logging, not an application journal.
+- The real CID helpers in `pastebin-wasm/src/lib.rs:191-221,327-347,377-399` are in a separate crate and are not called by the production Actix paste paths.
+
 ## Composition decision
 
 Use Artifact MCP's typed read grant to authenticate retrieval and independently require immutable public-release authorization for the exact tenant/revision/digest. Restrict the initial bridge to single-file bodies. The checked routes provide no idempotency-key contract or lookup by the bridge operation ID. A safe destination needs a durable operation-to-receipt binding and independent original-byte retrieval, plus verified DAG traversal for DAG-PB. Keep live adapters disabled until these contracts exist. Pastebin's four private `nora` dependencies remain a blocker for a server build under the authorized scope. [Fork dependency declarations](https://github.com/Yku1712/kant-zk-pastebin/blob/81e42b19bc11aa03d7f637c8d9ca62914d67d0fd/Cargo.toml#L23)

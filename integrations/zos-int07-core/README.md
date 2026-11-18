@@ -13,7 +13,7 @@ The crate has no server or production wiring. It requires an authorized snapshot
 
 ## Reproduce the evidence
 
-Run from this directory using Rustup and a C compiler for bundled SQLite. See [toolchain and dependencies](evidence/toolchain.txt) and the captured [validation transcript](evidence/validation.log).
+Run from this directory using Rustup and a C compiler for bundled SQLite. See [toolchain and dependencies](evidence/toolchain.txt), the original [validation transcript](evidence/validation.log), the independent [WSL2 reproduction](evidence/independent_validation.log), and the [independent verification record](INT07_INDEPENDENT_VERIFICATION.md). Use a byte-exact export when checking `SHA256SUMS`; a CRLF-normalized Windows checkout will not match.
 
 ```sh
 sha256sum -c SHA256SUMS
