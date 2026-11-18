@@ -1,0 +1,25 @@
+
+$ strace --version
+strace -- version 6.13
+Copyright (c) 1991-2025 The strace developers <https://strace.io>.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Optional features enabled: stack-trace=libunwind stack-demangle m32-mpers mx32-mpers
+[exit 0]
+
+$ env IPFS_PATH=/workspace/work/int12/stage-sync.zhAeqC/repo strace -f -yy -e trace=fsync\,fdatasync\,link\,linkat\,rename\,renameat\,renameat2\,unlink\,unlinkat -o /workspace/work/int12/int11-syscalls.log /workspace/work/int12/probe-patched/debug/pastebin-writer-probe add /workspace/work/int12/stage-sync.zhAeqC/input
+QmVvbRnu4eBDnCbaQXXY4b1rH4DUAhBUTKzqSwzq3RsDRb
+[exit 0]
+
+$ strace -f -yy -e trace=fsync\,fdatasync\,link\,linkat\,rename\,renameat\,renameat2\,unlink\,unlinkat -o /workspace/work/int12/int12-syscalls.log /workspace/work/int12/target/debug/deps/zos_ipfs_local_durability-dfcd68bfd69a679d --ignored --exact tests::injected_io_failures_gate_receipts_before_and_after_commit
+
+running 1 test
+test tests::injected_io_failures_gate_receipts_before_and_after_commit ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.72s
+
+[exit 0]
+
+INT11 file or directory sync calls: 0
+INT12 file or directory sync calls: 145

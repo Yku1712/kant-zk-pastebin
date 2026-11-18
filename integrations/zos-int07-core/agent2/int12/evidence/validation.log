@@ -1,0 +1,184 @@
+
+$ git rev-parse HEAD
+8cb627b41bd53a555557d7e46a5c1c1070d15dde
+[exit 0]
+
+$ uname -sm
+Linux x86_64
+[exit 0]
+
+$ rustc -Vv
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
+[exit 0]
+
+$ cargo -V
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+[exit 0]
+
+$ cc --version
+cc (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+[exit 0]
+
+$ stat -f -c %T /tmp /workspace
+overlayfs
+overlayfs
+[exit 0]
+
+$ cargo tree --locked --offline
+zos-ipfs-local-durability v0.1.0 (/workspace/work/int12/repo/integrations/zos-int07-core/agent2/int12)
+├── data-encoding v2.11.1
+├── rusqlite v0.37.0
+│   ├── bitflags v2.13.2
+│   ├── fallible-iterator v0.3.0
+│   ├── fallible-streaming-iterator v0.1.9
+│   ├── hashlink v0.10.0
+│   │   └── hashbrown v0.15.5
+│   │       └── foldhash v0.1.5
+│   ├── libsqlite3-sys v0.35.0
+│   │   [build-dependencies]
+│   │   ├── cc v1.11.2
+│   │   │   ├── find-msvc-tools v0.1.15
+│   │   │   └── shlex v2.0.1
+│   │   ├── pkg-config v0.3.34
+│   │   └── vcpkg v0.2.15
+│   └── smallvec v1.16.6
+├── sha2 v0.10.9
+│   ├── cfg-if v1.0.5
+│   ├── cpufeatures v0.2.17
+│   └── digest v0.10.7
+│       ├── block-buffer v0.10.4
+│       │   └── generic-array v0.14.7
+│       │       └── typenum v1.20.1
+│       │       [build-dependencies]
+│       │       └── version_check v0.9.5
+│       └── crypto-common v0.1.7
+│           ├── generic-array v0.14.7 (*)
+│           └── typenum v1.20.1
+├── tempfile v3.27.0
+│   ├── fastrand v2.5.0
+│   ├── getrandom v0.4.3
+│   │   ├── cfg-if v1.0.5
+│   │   └── libc v0.2.191
+│   ├── once_cell v1.21.4
+│   └── rustix v1.1.6
+│       ├── bitflags v2.13.2
+│       └── linux-raw-sys v0.12.1
+├── zos-int07-core v0.1.0 (/workspace/work/int12/repo/integrations/zos-int07-core)
+│   ├── cid v0.11.3
+│   │   ├── multibase v0.9.3
+│   │   │   ├── base-x v0.2.11
+│   │   │   ├── base256emoji v1.0.2
+│   │   │   │   ├── const-str v0.4.3
+│   │   │   │   └── match-lookup v0.1.3 (proc-macro)
+│   │   │   │       ├── proc-macro2 v1.0.107
+│   │   │   │       │   └── unicode-ident v1.0.27
+│   │   │   │       ├── quote v1.0.47
+│   │   │   │       │   └── proc-macro2 v1.0.107 (*)
+│   │   │   │       └── syn v2.0.119
+│   │   │   │           ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           ├── quote v1.0.47 (*)
+│   │   │   │           └── unicode-ident v1.0.27
+│   │   │   ├── base45 v3.2.0
+│   │   │   ├── data-encoding v2.11.1
+│   │   │   └── data-encoding-macro v0.1.21
+│   │   │       ├── data-encoding v2.11.1
+│   │   │       └── data-encoding-macro-internal v0.1.19 (proc-macro)
+│   │   │           ├── data-encoding v2.11.1
+│   │   │           └── syn v3.0.10
+│   │   │               ├── proc-macro2 v1.0.107 (*)
+│   │   │               └── unicode-ident v1.0.27
+│   │   ├── multihash v0.19.5
+│   │   │   └── unsigned-varint v0.8.0
+│   │   └── unsigned-varint v0.8.0
+│   ├── rusqlite v0.37.0 (*)
+│   └── sha2 v0.10.9 (*)
+└── zos-unixfs-readback v0.1.0 (/workspace/work/int12/repo/integrations/zos-int07-core/agent2/unixfs)
+    ├── cid v0.11.3 (*)
+    ├── data-encoding v2.11.1
+    ├── rustix v1.1.6 (*)
+    └── sha2 v0.10.9 (*)
+[exit 0]
+
+$ cargo fmt --all --check
+[exit 0]
+
+$ cargo build --locked --offline
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+[exit 0]
+
+$ cargo clippy --locked --offline --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+[exit 0]
+
+$ cargo test --locked --offline
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.10s
+     Running unittests src/lib.rs (/workspace/work/int12/target/debug/deps/zos_ipfs_local_durability-dfcd68bfd69a679d)
+
+running 7 tests
+test tests::actual_storage_failure_preserves_existing_receipt_and_reuse_refuses_corruption ... ignored, requires the locked INT11 patched writer probe
+test tests::authoritative_digest_and_shared_int07_int10_limit_gate_completion ... ignored, requires both locked INT11 writer probes
+test tests::crash_child ... ignored, subprocess entry point for process-kill recovery tests
+test tests::injected_io_failures_gate_receipts_before_and_after_commit ... ignored, requires the locked INT11 patched writer probe
+test tests::overlapping_identical_and_different_commits_are_immutable ... ignored, requires the locked INT11 patched writer probe
+test tests::real_sigkill_during_persistence_and_around_commit ... ignored, requires the locked INT11 patched writer probe
+test tests::managed_store_identity_and_unrecognized_paths_are_checked ... ok
+
+test result: ok. 1 passed; 0 failed; 6 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests zos_ipfs_local_durability
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ cargo test --locked --offline -- --ignored --skip tests::crash_child --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running unittests src/lib.rs (/workspace/work/int12/target/debug/deps/zos_ipfs_local_durability-dfcd68bfd69a679d)
+
+running 5 tests
+test tests::actual_storage_failure_preserves_existing_receipt_and_reuse_refuses_corruption ... ok
+injected BeforeBlock: receipt before replay=false, orphans=0
+injected DuringTempWrite: receipt before replay=false, orphans=0
+injected AfterFileSync: receipt before replay=false, orphans=0
+test tests::authoritative_digest_and_shared_int07_int10_limit_gate_completion ... ok
+injected AfterLink: receipt before replay=false, orphans=1
+injected AfterBlockSync: receipt before replay=false, orphans=1
+injected BeforeCommit: receipt before replay=false, orphans=3
+test tests::overlapping_identical_and_different_commits_are_immutable ... ok
+injected AfterCommit: receipt before replay=true, orphans=0
+test tests::injected_io_failures_gate_receipts_before_and_after_commit ... ok
+SIGKILL BeforeBlock: receipt=false, unreferenced blocks=0, temporary files=0
+SIGKILL DuringTempWrite: receipt=false, unreferenced blocks=0, temporary files=1
+SIGKILL AfterFileSync: receipt=false, unreferenced blocks=0, temporary files=1
+SIGKILL AfterLink: receipt=false, unreferenced blocks=1, temporary files=1
+SIGKILL AfterBlockSync: receipt=false, unreferenced blocks=1, temporary files=0
+SIGKILL BeforeCommit: receipt=false, unreferenced blocks=3, temporary files=0
+SIGKILL AfterCommit: receipt=true, unreferenced blocks=0, temporary files=0
+test tests::real_sigkill_during_persistence_and_around_commit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 1.44s
+
+   Doc-tests zos_ipfs_local_durability
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ env RUSTDOCFLAGS=-D\ warnings cargo doc --locked --offline --no-deps
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+   Generated /workspace/work/int12/target/doc/zos_ipfs_local_durability/index.html
+[exit 0]
