@@ -1,0 +1,193 @@
+
+$ git rev-parse HEAD
+361fae9395e4c7a18bbecf0099f2c613cc785d6d
+[exit 0]
+
+$ uname -sm
+Linux x86_64
+[exit 0]
+
+$ rustc -Vv
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
+[exit 0]
+
+$ cargo -V
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+[exit 0]
+
+$ cc --version
+cc (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+[exit 0]
+
+$ stat -f -c %T /tmp
+overlayfs
+[exit 0]
+
+$ cargo tree --locked --offline
+zos-int13-isolated-e2e v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int13)
+├── tempfile v3.27.0
+│   ├── fastrand v2.5.0
+│   ├── getrandom v0.4.3
+│   │   ├── cfg-if v1.0.5
+│   │   └── libc v0.2.191
+│   ├── once_cell v1.21.4
+│   └── rustix v1.1.6
+│       ├── bitflags v2.13.2
+│       └── linux-raw-sys v0.12.1
+├── zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core)
+│   ├── cid v0.11.3
+│   │   ├── multibase v0.9.3
+│   │   │   ├── base-x v0.2.11
+│   │   │   ├── base256emoji v1.0.2
+│   │   │   │   ├── const-str v0.4.3
+│   │   │   │   └── match-lookup v0.1.3 (proc-macro)
+│   │   │   │       ├── proc-macro2 v1.0.107
+│   │   │   │       │   └── unicode-ident v1.0.27
+│   │   │   │       ├── quote v1.0.47
+│   │   │   │       │   └── proc-macro2 v1.0.107 (*)
+│   │   │   │       └── syn v2.0.119
+│   │   │   │           ├── proc-macro2 v1.0.107 (*)
+│   │   │   │           ├── quote v1.0.47 (*)
+│   │   │   │           └── unicode-ident v1.0.27
+│   │   │   ├── base45 v3.2.0
+│   │   │   ├── data-encoding v2.11.1
+│   │   │   └── data-encoding-macro v0.1.21
+│   │   │       ├── data-encoding v2.11.1
+│   │   │       └── data-encoding-macro-internal v0.1.19 (proc-macro)
+│   │   │           ├── data-encoding v2.11.1
+│   │   │           └── syn v3.0.10
+│   │   │               ├── proc-macro2 v1.0.107 (*)
+│   │   │               └── unicode-ident v1.0.27
+│   │   ├── multihash v0.19.5
+│   │   │   └── unsigned-varint v0.8.0
+│   │   └── unsigned-varint v0.8.0
+│   ├── rusqlite v0.37.0
+│   │   ├── bitflags v2.13.2
+│   │   ├── fallible-iterator v0.3.0
+│   │   ├── fallible-streaming-iterator v0.1.9
+│   │   ├── hashlink v0.10.0
+│   │   │   └── hashbrown v0.15.5
+│   │   │       └── foldhash v0.1.5
+│   │   ├── libsqlite3-sys v0.35.0
+│   │   │   [build-dependencies]
+│   │   │   ├── cc v1.11.2
+│   │   │   │   ├── find-msvc-tools v0.1.15
+│   │   │   │   └── shlex v2.0.1
+│   │   │   ├── pkg-config v0.3.34
+│   │   │   └── vcpkg v0.2.15
+│   │   └── smallvec v1.16.6
+│   └── sha2 v0.10.9
+│       ├── cfg-if v1.0.5
+│       ├── cpufeatures v0.2.17
+│       └── digest v0.10.7
+│           ├── block-buffer v0.10.4
+│           │   └── generic-array v0.14.7
+│           │       └── typenum v1.20.1
+│           │       [build-dependencies]
+│           │       └── version_check v0.9.5
+│           └── crypto-common v0.1.7
+│               ├── generic-array v0.14.7 (*)
+│               └── typenum v1.20.1
+├── zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int13/repo/integrations/zos-int08-authorized-artifact-bridge)
+│   ├── cid v0.11.3 (*)
+│   ├── sha2 v0.10.9 (*)
+│   └── zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core) (*)
+├── zos-ipfs-local-durability v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int12)
+│   ├── data-encoding v2.11.1
+│   ├── rusqlite v0.37.0 (*)
+│   ├── sha2 v0.10.9 (*)
+│   ├── tempfile v3.27.0 (*)
+│   ├── zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core) (*)
+│   └── zos-unixfs-readback v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/unixfs)
+│       ├── cid v0.11.3 (*)
+│       ├── data-encoding v2.11.1
+│       ├── rustix v1.1.6 (*)
+│       ├── sha2 v0.10.9 (*)
+│       └── zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core) (*)
+└── zos-unixfs-readback v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/unixfs) (*)
+[dev-dependencies]
+├── data-encoding v2.11.1
+└── rusqlite v0.37.0 (*)
+[exit 0]
+
+$ cargo fmt --all --check
+[exit 0]
+
+$ cargo build --locked --offline
+   Compiling data-encoding v2.11.1
+   Compiling bitflags v2.13.2
+   Compiling smallvec v1.16.6
+   Compiling data-encoding-macro v0.1.21
+   Compiling multibase v0.9.3
+   Compiling rusqlite v0.37.0
+   Compiling cid v0.11.3
+   Compiling linux-raw-sys v0.12.1
+   Compiling rustix v1.1.6
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core)
+   Compiling libc v0.2.191
+   Compiling fastrand v2.5.0
+   Compiling once_cell v1.21.4
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/unixfs)
+   Compiling getrandom v0.4.3
+   Compiling tempfile v3.27.0
+   Compiling zos-ipfs-local-durability v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int12)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int13/repo/integrations/zos-int08-authorized-artifact-bridge)
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int13)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.35s
+[exit 0]
+
+$ cargo clippy --locked --offline --all-targets -- -D warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+[exit 0]
+Authentic patched producer binary /workspace/work/int12/probe-patched/debug/pastebin-writer-probe
+
+$ sha256sum /workspace/work/int12/probe-patched/debug/pastebin-writer-probe
+da2178dd0c06b6700bebf0f6bfaf94ecdc16336148f8da76daacb8fe66731915  /workspace/work/int12/probe-patched/debug/pastebin-writer-probe
+[exit 0]
+
+$ cargo test --locked --offline -- --ignored --skip tests::crash_child --nocapture
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int13)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.56s
+     Running unittests src/lib.rs (/workspace/work/int13/target/debug/deps/zos_int13_isolated_e2e-58968070f0820928)
+
+running 8 tests
+authentic staged child altered: journal unresolved, provider receipt absent
+authentic staged child missing: journal unresolved, provider receipt absent
+test tests::authentic_staged_child_mutations_never_confirm ... ok
+test tests::another_readback_detects_corruption_after_confirmation ... ok
+test tests::lost_ack_with_valid_local_receipt_is_reconciled_read_only ... ok
+test tests::oversized_authorized_snapshot_is_rejected_before_staging_or_receipt ... ok
+test tests::concurrent_identical_retry_is_idempotent_and_conflicting_revision_is_denied ... ok
+during promotion: revocation withheld bridge confirmation; one local receipt retained
+SIGKILL before destination COMMIT: bridge was unresolved; recovered one receipt, stages=1
+during promotion: expiry withheld bridge confirmation; one local receipt retained
+test tests::revocation_or_expiry_during_promotion_blocks_bridge_confirmation ... ok
+test tests::unauthorized_expired_revoked_wrong_revision_or_wrong_digest_never_stage ... ok
+SIGKILL after destination COMMIT: bridge was unresolved; recovered one receipt, stages=0
+test tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 1.32s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+[exit 0]
+
+$ env RUSTDOCFLAGS=-D\ warnings cargo doc --locked --offline --no-deps
+ Documenting zos-int13-isolated-e2e v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core/agent2/int13)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.62s
+   Generated /workspace/work/int13/target/doc/zos_int13_isolated_e2e/index.html
+[exit 0]

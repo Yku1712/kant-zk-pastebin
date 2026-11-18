@@ -1,0 +1,20 @@
+[package]
+name = "zos-int13-isolated-e2e"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[dependencies]
+tempfile = "=3.27.0"
+zos-int07-core = { path = "../.." }
+zos-int08-authorized-artifact-bridge = { path = "../../../zos-int08-authorized-artifact-bridge" }
+zos-ipfs-local-durability = { path = "../int12" }
+zos-unixfs-readback = { path = "../unixfs", features = ["int07"] }
+
+[dev-dependencies]
+data-encoding = "=2.11.1"
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
