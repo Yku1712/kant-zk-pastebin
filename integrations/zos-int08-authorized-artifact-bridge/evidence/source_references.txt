@@ -1,0 +1,61 @@
+# Artifact MCP authority source references
+commit: 731d5b6e3436cc4bdee961f8510eda6ea2a0d9eb
+status: dirty
+
+## Principal
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/identity.rs:102:pub struct PublisherIdentity {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/identity.rs:120:    pub fn is_admin(&self) -> bool {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/identity.rs:133:    pub fn has_scope(&self, required: &str) -> bool {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/auth.rs:264:    fn find_active<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/auth.rs:277:    fn find_active<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/auth.rs:313:    fn authenticate<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/auth.rs:335:pub fn identity_for(record: PublisherKeyRecord) -> Result<PublisherIdentity, AppError> {
+
+## Grants and projection
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:107:pub struct AuthorizedArtifact(ArtifactMeta);
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:123:pub struct OwnedArtifact(ArtifactMeta);
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:302:    pub fn authorize_viewer(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:441:    pub fn authorize_publisher_read(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:521:    pub fn authorize_share(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/access.rs:547:pub async fn resolve_for_viewer(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:10:pub struct ArtifactPublicView<Details = CurrentArtifactPublicFields> {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:44:impl ArtifactPublicView {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:53:    pub const WITHHELD_META_FIELDS: &[&str] = &["client_id", "owner_email", "body_sha256"];
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:62:impl From<ArtifactMeta> for ArtifactPublicView {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:106:impl ArtifactPublicView<RevisionArtifactPublicFields> {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:114:impl From<ArtifactRevision> for ArtifactPublicView<RevisionArtifactPublicFields> {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:178:        expected.extend(ArtifactPublicView::WITHHELD_META_FIELDS);
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/model/artifact_public_view.rs:196:        let view = format!("{:?}", ArtifactPublicView::from(meta));
+
+## Exact revision and digest
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/ports/artifacts.rs:20:    fn find_meta<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/ports/artifacts.rs:28:    fn find_meta_by_key<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/ports/artifacts.rs:88:    fn read_bundle_file<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/ports/artifacts.rs:94:    fn read_revision_body<'a>(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:58:    let cast_pinned = parsed.has("cast-pin");
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:59:    if cast_pinned {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:63:            artifact.meta().body_sha256
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:65:        let Some(pin) = parsed.single("cast-pin") else {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:70:            || artifact.meta().body_sha256.len() != 64
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:73:                .body_sha256
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:77:            || sha256_hex(&file.content) != artifact.meta().body_sha256
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:180:        .read_revision_body(&artifact, revision, None)
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/raw.rs:224:        .read_revision_body(&artifact, revision, Some(path))
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/artifacts/digest.rs:32:pub fn sha256_hex(content: &[u8]) -> String {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/artifacts/digest.rs:44:pub fn single_body_digest(content: &[u8]) -> String {
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/artifacts/digest.rs:68:pub fn bundle_manifest_digest<P, C>(entries: &[(P, C)]) -> String
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/artifacts/digest.rs:95:pub fn body_digest_at_path(target: &Path, is_bundle: bool) -> Option<String> {
+
+## Release and tenancy
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/security/oauth.rs:28:pub const SCOPE_VISIBILITY: &str = "artifacts:visibility";
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/mcp/admission.rs:76:    require_scope(deps, &auth, &payload, method, name, labels)?;
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/mcp/admission.rs:312:        require_scope(deps, auth, message, method, name, labels)?;
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/http/routes/mcp/admission.rs:347:fn require_scope(
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/shares.rs:66:     JOIN artifacts a ON a.id = s.artifact_id AND a.org = s.org \
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/shares.rs:67:     WHERE s.token = ?1 AND s.revoked_at IS NULL \
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/shares.rs:73:     WHERE artifact_id = ?1 AND revoked_at IS NULL \
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/shares.rs:79:     WHERE artifact_id = ?1 AND token = ?2 AND revoked_at IS NULL";
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/migrations/m001_m010.rs:121:        CREATE UNIQUE INDEX IF NOT EXISTS artifacts_id_org_uidx ON artifacts(id, org);
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/migrations/m001_m010.rs:230:        CREATE TABLE IF NOT EXISTS artifact_revisions (
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/migrations/m001_m010.rs:241:          PRIMARY KEY (artifact_id, revision),
+/mnt/c/Users/Yku/AppData/Local/Temp/opencode/zos-int07-agent1/artifact-mcp/src/persistence/migrations/m001_m010.rs:244:        CREATE INDEX IF NOT EXISTS artifact_revisions_idx ON artifact_revisions(artifact_id, revision DESC);
