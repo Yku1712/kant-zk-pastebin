@@ -1,0 +1,85 @@
++ patch=[agent2-workspace]
++ git apply --check [agent2-workspace]
++ git apply [agent2-workspace]
++ diff -qr integrations/zos-int07-core/agent2/experimental [agent2-workspace]
++ cd integrations/zos-int07-core
++ sha256sum -c SHA256SUMS
+.gitignore: OK
+AGENT_2_HANDOFF.md: OK
+Cargo.lock: OK
+Cargo.toml: OK
+INT07_20_CONTRACT_AUDIT.md: OK
+INT07_22_SQLITE_RECOVERY.md: OK
+LICENSE: OK
+README.md: OK
+evidence/toolchain.txt: OK
+evidence/validation.log: OK
+rust-toolchain.toml: OK
+src/journal.rs: OK
+src/journal/tests.rs: OK
+src/lib.rs: OK
+tests/publication.rs: OK
++ cargo test --locked --offline --manifest-path agent2/experimental/Cargo.toml
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling version_check v0.9.5
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling find-msvc-tools v0.1.15
+   Compiling shlex v2.0.1
+   Compiling typenum v1.20.1
+   Compiling syn v2.0.119
+   Compiling cc v1.11.2
+   Compiling syn v3.0.10
+   Compiling pkg-config v0.3.34
+   Compiling vcpkg v0.2.15
+   Compiling data-encoding v2.11.1
+   Compiling libsqlite3-sys v0.35.0
+   Compiling match-lookup v0.1.3
+   Compiling const-str v0.4.3
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling foldhash v0.1.5
+   Compiling data-encoding-macro v0.1.21
+   Compiling hashbrown v0.15.5
+   Compiling base256emoji v1.0.2
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling unsigned-varint v0.8.0
+   Compiling base45 v3.2.0
+   Compiling base-x v0.2.11
+   Compiling multibase v0.9.3
+   Compiling multihash v0.19.5
+   Compiling digest v0.10.7
+   Compiling hashlink v0.10.0
+   Compiling cpufeatures v0.2.17
+   Compiling bitflags v2.13.2
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling smallvec v1.16.5
+   Compiling fallible-iterator v0.3.0
+   Compiling cfg-if v1.0.5
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling rusqlite v0.37.0
+   Compiling zos-int07-core v0.1.0 ([agent2-workspace])
+   Compiling zos-int07-local-destination v0.1.0 ([agent2-workspace])
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 22.47s
+     Running unittests src/lib.rs ([agent2-workspace])
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/local_destination.rs ([agent2-workspace])
+
+running 3 tests
+test concurrent_first_submission_and_explicit_retry_commit_one_provider_record ... ok
+test committed_provider_write_survives_lost_response_and_reopens_for_readback ... ok
+test provider_limits_input_and_binds_readback_to_operation_and_instance ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+   Doc-tests zos_int07_local_destination
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
