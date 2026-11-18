@@ -1,0 +1,17 @@
+[package]
+name = "zos-ipfs-local-durability"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[dependencies]
+data-encoding = "=2.11.1"
+rusqlite = { version = "=0.37.0", features = ["bundled"] }
+sha2 = "=0.10.9"
+tempfile = "=3.27.0"
+zos-int07-core = { path = "../.." }
+zos-unixfs-readback = { path = "../unixfs" }
