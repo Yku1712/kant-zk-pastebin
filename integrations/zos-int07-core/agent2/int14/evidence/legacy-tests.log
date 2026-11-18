@@ -1,0 +1,78 @@
++ cargo generate-lockfile --offline --manifest-path /workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.toml
+     Locking 42 packages to latest Rust 1.95 compatible versions
+      Adding sha2 v0.10.9 (available: v0.11.1)
++ set +e
++ cargo test --locked --offline --manifest-path /workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.toml
+   Compiling data-encoding v2.11.1
+   Compiling bitflags v2.13.2
+   Compiling rusqlite v0.37.0
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling data-encoding-macro v0.1.21
+   Compiling multibase v0.9.3
+   Compiling cid v0.11.3
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int14.OGBgzK/compat/integrations/zos-int07-core)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge)
+error[E0050]: method `published_bytes` has 3 parameters but the declaration in trait `published_bytes` has 4
+   --> tests/adversarial.rs:148:24
+    |
+148 |     fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `published_bytes` from trait: `fn(&Self, &Intent, &ReceiptCandidate, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+error[E0050]: method `verified_ipfs_bytes` has 3 parameters but the declaration in trait `verified_ipfs_bytes` has 4
+   --> tests/adversarial.rs:152:28
+    |
+152 |     fn verified_ipfs_bytes(&self, _: &Intent, _: &cid::Cid) -> Result<Vec<u8>, Error> {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `verified_ipfs_bytes` from trait: `fn(&Self, &Intent, &CidGeneric<64>, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+For more information about this error, try `rustc --explain E0050`.
+error: could not compile `zos-int08-authorized-artifact-bridge` (test "adversarial") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
++ status=101
++ set -e
++ printf 'unpatched legacy tests exit=%s\n' 101
+unpatched legacy tests exit=101
++ test 101 = 101
++ patchfile=/workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch
++ python3 - /workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge/tests/adversarial.rs /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch integrations/zos-int08-authorized-artifact-bridge
++ git -C /workspace/work/int14.OGBgzK/compat apply --check /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch
++ git -C /workspace/work/int14.OGBgzK/compat apply /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch
++ cargo test --locked --offline --manifest-path /workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.toml
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.79s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/zos_int08_authorized_artifact_bridge-569d12f965d48a95)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/adversarial.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/adversarial-810d19636e74ad6e)
+
+running 12 tests
+test authorized_public_revision ... ok
+test cross_tenant_request ... ok
+test digest_mismatch ... ok
+test inconsistent_source_snapshot ... ok
+test missing_artifact ... ok
+test public_to_private_policy_transition ... ok
+test reader_with_read_access_still_lacks_public_release ... ok
+test revision_substitution ... ok
+test source_namespace_is_part_of_the_grant ... ok
+test stale_grant ... ok
+test unauthorized_principal ... ok
+test confirmed_operation_cannot_be_reused_after_revocation ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests zos_int08_authorized_artifact_bridge
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ printf 'patched legacy tests exit=0\n'
+patched legacy tests exit=0
++ cp /workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.lock /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_COMPAT.Cargo.lock

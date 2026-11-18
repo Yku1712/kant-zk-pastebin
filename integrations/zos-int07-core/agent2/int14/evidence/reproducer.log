@@ -1,0 +1,417 @@
+Evidence workspace /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp
++ rustc -vV
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
++ cargo -vV
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+release: 1.95.0
+commit-hash: f2d3ce0bd7f24a49f8f72d9000448f8838c4e850
+commit-date: 2026-03-21
+host: x86_64-unknown-linux-gnu
+libgit2: 1.9.2 (sys:0.20.4 vendored)
+libcurl: 8.15.0-DEV (sys:0.4.83+curl-8.15.0 vendored ssl:OpenSSL/3.5.4)
+ssl: OpenSSL 3.5.4 30 Sep 2025
+os: Debian 13.0.0 [64-bit]
++ cc --version
+cc (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
++ git --version
+git version 2.52.0
++ uname -sm
+Linux x86_64
++ stat -f -c %T /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp
+overlayfs
++ git -C /workspace/work/int14.OGBgzK/repo cat-file -e '113ec894865a6f16c8d8f9bdfc559c72abd02c82^{commit}'
++ git -C /workspace/work/int14.OGBgzK/repo cat-file -e 'a9dde4d712dc0c99c3ef2b30d92ef49723695c77^{commit}'
+++ git -C /workspace/work/int14.OGBgzK/repo rev-parse '113ec894865a6f16c8d8f9bdfc559c72abd02c82^'
++ test 361fae9395e4c7a18bbecf0099f2c613cc785d6d = 361fae9395e4c7a18bbecf0099f2c613cc785d6d
++ git -C /workspace/work/int14.OGBgzK/repo rev-parse 113ec894865a6f16c8d8f9bdfc559c72abd02c82 '113ec894865a6f16c8d8f9bdfc559c72abd02c82^{tree}' 8cb627b41bd53a555557d7e46a5c1c1070d15dde a9dde4d712dc0c99c3ef2b30d92ef49723695c77
+113ec894865a6f16c8d8f9bdfc559c72abd02c82
+b8371188f9c7aabec8c6bd35fecfbf842f70e279
+8cb627b41bd53a555557d7e46a5c1c1070d15dde
+a9dde4d712dc0c99c3ef2b30d92ef49723695c77
++ mkdir /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/legacy /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat
++ git -C /workspace/work/int14.OGBgzK/repo archive 113ec894865a6f16c8d8f9bdfc559c72abd02c82
++ tar -x -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export
++ git -C /workspace/work/int14.OGBgzK/repo archive 8cb627b41bd53a555557d7e46a5c1c1070d15dde Cargo.toml src/ipfs.rs
++ tar -x -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer
++ suite=integrations/zos-int08-authorized-artifact-bridge
++ audit=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2
++ git -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer apply /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
++ sha256sum /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer/src/ipfs.rs /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
+96d4df2a8a2bf9984216cbdfb077e5d0420d51b61cbb43e114b69325f420b68f  /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer/src/ipfs.rs
+a190e593740a36c06c2b8365eb4422108765b8539fee87bcfaf8f1459a4fbe86  /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
++ cd /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13
++ sha256sum -c SHA256SUMS
+../../../zos-int08-authorized-artifact-bridge/Cargo.toml: OK
+../../../zos-int08-authorized-artifact-bridge/LICENSE: OK
+../../../zos-int08-authorized-artifact-bridge/src/lib.rs: OK
+.gitignore: OK
+Cargo.lock: OK
+Cargo.toml: OK
+INT13_INTEGRATION_REPORT.md: OK
+evidence/baselines.log: OK
+evidence/int08-contract.log: OK
+evidence/int08-manifest.log: OK
+evidence/int08-original-tests.log: OK
+evidence/producer.log: OK
+evidence/validation.log: OK
+src/lib.rs: OK
+src/tests.rs: OK
++ INT11_PASTEBIN_SOURCE=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/writer/src/ipfs.rs
++ cargo build --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int11/probe/Cargo.toml --features patched-writer --target-dir /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/producer-target
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling typenum v1.20.1
+   Compiling version_check v0.9.5
+   Compiling syn v2.0.119
+   Compiling generic-array v0.14.7
+   Compiling unsigned-varint v0.8.0
+   Compiling data-encoding v2.11.0
+   Compiling hashbrown v0.17.1
+   Compiling cfg-if v1.0.5
+   Compiling equivalent v1.0.3
+   Compiling winnow v1.0.5
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling indexmap v2.14.2
+   Compiling multihash v0.19.5
+   Compiling hybrid-array v0.4.15
+   Compiling match-lookup v0.1.3
+   Compiling data-encoding-macro-internal v0.1.18
+   Compiling const-str v0.4.3
+   Compiling libc v0.2.191
+   Compiling toml_datetime v1.1.3+spec-1.1.0
+   Compiling toml_edit v0.25.19+spec-1.1.0
+   Compiling base256emoji v1.0.2
+   Compiling data-encoding-macro v0.1.20
+   Compiling base45 v3.2.0
+   Compiling base-x v0.2.11
+   Compiling multibase v0.9.3
+   Compiling proc-macro-crate v3.5.0
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling synstructure v0.13.2
+   Compiling thiserror v1.0.69
+   Compiling multihash-derive-impl v0.1.3
+   Compiling digest v0.11.3
+   Compiling cid v0.11.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling thiserror-impl v1.0.69
+   Compiling rustix v1.1.6
+   Compiling byteorder v1.5.0
+   Compiling cpufeatures v0.3.1
+   Compiling getrandom v0.4.3
+   Compiling sha2 v0.11.0
+   Compiling quick-protobuf v0.8.1
+   Compiling digest v0.10.7
+   Compiling multihash-derive v0.9.3
+   Compiling ipld-core v0.4.3
+   Compiling linux-raw-sys v0.12.1
+   Compiling cpufeatures v0.2.17
+   Compiling bytes v1.11.1
+   Compiling bitflags v2.13.2
+   Compiling ipld-dagpb v0.2.2
+   Compiling sha2 v0.10.9
+   Compiling multihash-codetable v0.2.2
+   Compiling filetime v0.2.29
+   Compiling either v1.16.0
+   Compiling fastrand v2.5.0
+   Compiling pastebin-writer-probe v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int11/probe)
+   Compiling once_cell v1.21.4
+   Compiling rust-unixfs v0.5.1
+   Compiling tempfile v3.27.0
+   Compiling log v0.4.33
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 19.08s
++ export INT13_PROBE=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/producer-target/debug/pastebin-writer-probe
++ INT13_PROBE=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/producer-target/debug/pastebin-writer-probe
++ sha256sum /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/producer-target/debug/pastebin-writer-probe
+14a9560d261cc797e0a29fddd41c8bf43eff394e6763462b7a2ee4c3aa908559  /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/producer-target/debug/pastebin-writer-probe
++ export CARGO_TARGET_DIR=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target
++ CARGO_TARGET_DIR=/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target
++ cargo test --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored --skip tests::crash_child --nocapture
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling quote v1.0.47
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling typenum v1.20.1
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling cc v1.11.2
+   Compiling syn v2.0.119
+   Compiling syn v3.0.10
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling data-encoding v2.11.1
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling match-lookup v0.1.3
+   Compiling libsqlite3-sys v0.35.0
+   Compiling cfg-if v1.0.5
+   Compiling const-str v0.4.3
+   Compiling bitflags v2.13.2
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling base256emoji v1.0.2
+   Compiling data-encoding-macro v0.1.21
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling base45 v3.2.0
+   Compiling unsigned-varint v0.8.0
+   Compiling base-x v0.2.11
+   Compiling multibase v0.9.3
+   Compiling multihash v0.19.5
+   Compiling digest v0.10.7
+   Compiling hashlink v0.10.0
+   Compiling rustix v1.1.6
+   Compiling smallvec v1.16.6
+   Compiling fallible-iterator v0.3.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling cpufeatures v0.2.17
+   Compiling libc v0.2.191
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling getrandom v0.4.3
+   Compiling linux-raw-sys v0.12.1
+   Compiling fastrand v2.5.0
+   Compiling once_cell v1.21.4
+   Compiling tempfile v3.27.0
+   Compiling rusqlite v0.37.0
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core)
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/unixfs)
+   Compiling zos-ipfs-local-durability v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int12)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int08-authorized-artifact-bridge)
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.61s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target/debug/deps/zos_int13_isolated_e2e-cc718bec4d074c28)
+
+running 8 tests
+authentic staged child altered: journal unresolved, provider receipt absent
+authentic staged child missing: journal unresolved, provider receipt absent
+test tests::authentic_staged_child_mutations_never_confirm ... ok
+test tests::another_readback_detects_corruption_after_confirmation ... ok
+test tests::lost_ack_with_valid_local_receipt_is_reconciled_read_only ... ok
+test tests::oversized_authorized_snapshot_is_rejected_before_staging_or_receipt ... ok
+test tests::concurrent_identical_retry_is_idempotent_and_conflicting_revision_is_denied ... ok
+during promotion: revocation withheld bridge confirmation; one local receipt retained
+SIGKILL before destination COMMIT: bridge was unresolved; recovered one receipt, stages=1
+during promotion: expiry withheld bridge confirmation; one local receipt retained
+test tests::revocation_or_expiry_during_promotion_blocks_bridge_confirmation ... ok
+test tests::unauthorized_expired_revoked_wrong_revision_or_wrong_digest_never_stage ... ok
+SIGKILL after destination COMMIT: bridge was unresolved; recovered one receipt, stages=0
+test tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 1.37s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ cargo test --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored --exact tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target/debug/deps/zos_int13_isolated_e2e-cc718bec4d074c28)
+
+running 1 test
+SIGKILL before destination COMMIT: bridge was unresolved; recovered one receipt, stages=1
+SIGKILL after destination COMMIT: bridge was unresolved; recovered one receipt, stages=0
+test tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.59s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ cp /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/int14_tests.rs /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13/src/int14.rs
++ printf '\n#[path = "int14.rs"]\nmod int14;\n'
++ cargo test --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored tests::int14:: --nocapture
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/export/integrations/zos-int07-core/agent2/int13)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.67s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target/debug/deps/zos_int13_isolated_e2e-cc718bec4d074c28)
+
+running 6 tests
+
+running 1 test
+before-check Revocation: journal=None, receipts=0
+before-check Expiry: journal=None, receipts=0
+before-check Unavailable: journal=None, receipts=0
+before-check ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+before-source Revocation: journal=None, receipts=0
+before: pid=47503 exit_code=None signal=Some(9), staged plaintext quarantined, canonical root preserved, one receipt after retries
+
+running 1 test
+before-source Expiry: journal=None, receipts=0
+before-source Unavailable: journal=None, receipts=0
+before-source ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+after: pid=47514 exit_code=None signal=Some(9), staged plaintext quarantined, canonical root preserved, one receipt after retries
+test tests::int14::abrupt_exit_staging_quarantine_is_separate_from_committed_blocks ... ok
+staged Revocation: journal=Some(Unresolved), receipts=1
+stale positive sample #3 Revocation: historical CONFIRMED, returned=false
+staged Expiry: journal=Some(Unresolved), receipts=1
+stale positive sample #3 Expiry: historical CONFIRMED, returned=false
+staged Unavailable: journal=Some(Unresolved), receipts=1
+stale positive sample #3 Unavailable: historical CONFIRMED, returned=false
+staged ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+stale positive sample #4 Revocation: historical CONFIRMED, returned=true
+before-commit Revocation: journal=Some(Unresolved), receipts=1
+stale positive sample #4 Expiry: historical CONFIRMED, returned=true
+before-commit Expiry: journal=Some(Unresolved), receipts=1
+stale positive sample #4 Unavailable: historical CONFIRMED, returned=true
+test tests::int14::authorization_sampling_races_with_confirmation_and_return ... ok
+before-commit Unavailable: journal=Some(Unresolved), receipts=1
+before-commit ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+after-commit Revocation: journal=Some(Unresolved), receipts=1
+after-commit Expiry: journal=Some(Unresolved), receipts=1
+after-commit Unavailable: journal=Some(Unresolved), receipts=1
+missing-root: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+after-commit ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+during-lookup Revocation: journal=Some(Unresolved), receipts=1
+during-lookup Expiry: journal=Some(Unresolved), receipts=1
+missing-child: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+during-lookup Unavailable: journal=Some(Unresolved), receipts=1
+during-lookup ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+historical Revocation: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+historical Expiry: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+corrupt-child: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+test tests::int14::historical_receipt_survives_storage_fault_and_atomic_repair ... ok
+historical Unavailable: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+historical ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+test tests::int14::authority_matrix ... ok
+1 canonical block keys shared; concurrent reader saw old graph and no partial receipt; inventory serialized with writer
+test tests::int14::shared_blocks_and_inventory_during_publication ... ok
+INT08 source revocation after snapshot: in-flight return confirmed; next execution denied
+test tests::int14::source_revocation_after_snapshot_only_affects_later_execution ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 5.82s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ git -C /workspace/work/int14.OGBgzK/repo archive a9dde4d712dc0c99c3ef2b30d92ef49723695c77 integrations/zos-int08-authorized-artifact-bridge
++ tar -x -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/legacy
++ cd /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/legacy/integrations/zos-int08-authorized-artifact-bridge
++ sha256sum -c /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_GIT_SHA256SUMS
+AUTHORITY_CONTRACT.md: OK
+Cargo.lock: OK
+Cargo.toml: OK
+LICENSE: OK
+README.md: OK
+SECURITY_ANALYSIS.md: OK
+evidence/locked_validation.log: OK
+evidence/source_references.txt: OK
+evidence/toolchain.txt: OK
+evidence/validation.log: OK
+rust-toolchain.toml: OK
+src/lib.rs: OK
+tests/adversarial.rs: OK
++ python3 /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/verify_legacy_manifest.py /workspace/work/int14.OGBgzK/repo /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/legacy /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_GIT_SHA256SUMS
+AUTHORITY_CONTRACT.md Git/archive=3e54f29d2239a791c64ecb7f08c6220924a000f44b4df650038f1cf7f64b023a historical=d54d9d1948f135a84e883cfb89329ee017c7e3bcd78bc3d40bc965e1e9351378 CRLF=d54d9d1948f135a84e883cfb89329ee017c7e3bcd78bc3d40bc965e1e9351378
+Cargo.lock Git/archive=bd5b83abdccbe643d17b1fda2784a70270ce97dbe059545483d39e44642843dd historical=d25b034023ac6d087b819b208815c307f1633671034fd95be50d84ccb1d0275c CRLF=d25b034023ac6d087b819b208815c307f1633671034fd95be50d84ccb1d0275c
+Cargo.toml Git/archive=6c5771aaa944c3979cf20ea50fea94cebb0252a9285e7fb59c62a5a74b0a11c6 historical=8148fe6cda7b5f004c49c0dd12d425fcf4c9a16824dff9571677ce50d9a03d60 CRLF=8148fe6cda7b5f004c49c0dd12d425fcf4c9a16824dff9571677ce50d9a03d60
+LICENSE Git/archive=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30 historical=3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5 CRLF=3ddf9be5c28fe27dad143a5dc76eea25222ad1dd68934a047064e56ed2fa40c5
+README.md Git/archive=5564fd5331b50788a203fd9ea1bcaa89682f31c13a4433a460e8435f25af9efb historical=ae2d16cce2c5fdcc8635d937068f9800e487a00032287d145507ab87597608c6 CRLF=ae2d16cce2c5fdcc8635d937068f9800e487a00032287d145507ab87597608c6
+SECURITY_ANALYSIS.md Git/archive=d20b3b0663429cfaffb8b300a1e9db3153ca5f313c4217403abb8239815ab893 historical=a46d8e20ad895653c1c300595fe3c294c287cd76cf3dbf54af772bd05cc7d940 CRLF=a46d8e20ad895653c1c300595fe3c294c287cd76cf3dbf54af772bd05cc7d940
+evidence/locked_validation.log Git/archive=9668b7e4854e3e4e70d6ccb26e64009ca4973353a307c2738e124b333b40ce16 historical=495173bbb915012d5e808c360263120ec70fc27af82db6dc3f3070184b43f64a CRLF=495173bbb915012d5e808c360263120ec70fc27af82db6dc3f3070184b43f64a
+evidence/source_references.txt Git/archive=0348504065372e00c1d0a721121c521184e5af523c17409817b5c33d735b49ae historical=203b8aedd79e3f106bbabf4dc9111bb611407489116c184f70725fd9613b0a56 CRLF=203b8aedd79e3f106bbabf4dc9111bb611407489116c184f70725fd9613b0a56
+evidence/toolchain.txt Git/archive=8e8f1f6e91994918122ae66b560824f074649c9767453e7fc5b1a7a537bb8a76 historical=41b592b0bf9051b1fa426c43dd852ede2549cabe154a5e3ee765e0e77db95b4f CRLF=41b592b0bf9051b1fa426c43dd852ede2549cabe154a5e3ee765e0e77db95b4f
+evidence/validation.log Git/archive=149e3decc45465383df88374ac816c901219d08fb0ca2cc77123a85560158eb7 historical=4535469eb762ee33da061153fef362206925d32bc72112166707871e35b79370 CRLF=4535469eb762ee33da061153fef362206925d32bc72112166707871e35b79370
+rust-toolchain.toml Git/archive=7d21c66a15f41bad66b82ed06a289f5dc8a6e3751951d2696bbf20ce296f2b0f historical=cfb5e6306fe5799a0e93d863c1f8e42d4d4e1988b22c16e1a893e10d2f75b396 CRLF=cfb5e6306fe5799a0e93d863c1f8e42d4d4e1988b22c16e1a893e10d2f75b396
+src/lib.rs Git/archive=47c68aa13280fb0428f5f7e21daf842d5e1ff56591ab1ef00536dd87f7e51271 historical=711ef7649287167a4cf1621bcdc30db33dedb7d830945b7d1a0afba6446b5aad CRLF=711ef7649287167a4cf1621bcdc30db33dedb7d830945b7d1a0afba6446b5aad
+tests/adversarial.rs Git/archive=2393a72fb35237cc21969993138db897c04afada1f231bfabcec38383e9945a4 historical=3598afa895b8bdb6ca06f3c5040409037c2c85953907d0d6bc70295bcc311512 CRLF=3598afa895b8bdb6ca06f3c5040409037c2c85953907d0d6bc70295bcc311512
+a9dde4d712dc0c99c3ef2b30d92ef49723695c77: 13 verified Git hashes and 13 historical CRLF matches
++ git -C /workspace/work/int14.OGBgzK/repo archive 113ec894865a6f16c8d8f9bdfc559c72abd02c82 integrations/zos-int07-core integrations/zos-int08-authorized-artifact-bridge
++ tar -x -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat
++ cp -r /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/legacy/integrations/zos-int08-authorized-artifact-bridge/tests /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge/
++ cp /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_COMPAT.Cargo.lock /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.lock
++ set +e
++ cargo test --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.toml
++ tee /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/e0050.log
+   Compiling data-encoding v2.11.1
+   Compiling bitflags v2.13.2
+   Compiling rusqlite v0.37.0
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling data-encoding-macro v0.1.21
+   Compiling multibase v0.9.3
+   Compiling cid v0.11.3
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int07-core)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge)
+error[E0050]: method `published_bytes` has 3 parameters but the declaration in trait `published_bytes` has 4
+   --> tests/adversarial.rs:148:24
+    |
+148 |     fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `published_bytes` from trait: `fn(&Self, &Intent, &ReceiptCandidate, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+error[E0050]: method `verified_ipfs_bytes` has 3 parameters but the declaration in trait `verified_ipfs_bytes` has 4
+   --> tests/adversarial.rs:152:28
+    |
+152 |     fn verified_ipfs_bytes(&self, _: &Intent, _: &cid::Cid) -> Result<Vec<u8>, Error> {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `verified_ipfs_bytes` from trait: `fn(&Self, &Intent, &CidGeneric<64>, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+For more information about this error, try `rustc --explain E0050`.
+error: could not compile `zos-int08-authorized-artifact-bridge` (test "adversarial") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
++ code=101
++ set -e
++ printf 'unpatched legacy tests exit=%s\n' 101
+unpatched legacy tests exit=101
++ test 101 = 101
+++ rg -c '^error\[E0050\]' /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/e0050.log
++ test 2 = 2
++ git -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat apply --check /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch
++ git -C /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat apply /workspace/work/int14.OGBgzK/repo/integrations/zos-int07-core/agent2/int14/INT08_TEST_FIXTURES.patch
++ cargo test --locked --manifest-path /workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge/Cargo.toml
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/compat/integrations/zos-int08-authorized-artifact-bridge)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.70s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target/debug/deps/zos_int08_authorized_artifact_bridge-47462ce03b57adeb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/adversarial.rs (/workspace/work/int14.OGBgzK/zos-int14.mEJZIqIp/int13-target/debug/deps/adversarial-44524f91e82e7e0d)
+
+running 12 tests
+test authorized_public_revision ... ok
+test cross_tenant_request ... ok
+test digest_mismatch ... ok
+test inconsistent_source_snapshot ... ok
+test missing_artifact ... ok
+test public_to_private_policy_transition ... ok
+test reader_with_read_access_still_lacks_public_release ... ok
+test revision_substitution ... ok
+test source_namespace_is_part_of_the_grant ... ok
+test stale_grant ... ok
+test unauthorized_principal ... ok
+test confirmed_operation_cannot_be_reused_after_revocation ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests zos_int08_authorized_artifact_bridge
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ code=0
++ printf 'reproduce.sh exit=%s\n' 0
+reproduce.sh exit=0

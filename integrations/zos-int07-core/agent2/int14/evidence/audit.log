@@ -1,0 +1,70 @@
++ cargo test --locked --offline --manifest-path /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored tests::int14:: --nocapture
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.17s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/zos_int13_isolated_e2e-ac64ef1bd2acb98f)
+
+running 6 tests
+
+running 1 test
+before-check Revocation: journal=None, receipts=0
+before-check Expiry: journal=None, receipts=0
+before-check Unavailable: journal=None, receipts=0
+before-check ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+before: pid=46457 exit_code=None signal=Some(9), staged plaintext quarantined, canonical root preserved, one receipt after retries
+
+running 1 test
+before-source Revocation: journal=None, receipts=0
+before-source Expiry: journal=None, receipts=0
+before-source Unavailable: journal=None, receipts=0
+before-source ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+after: pid=46474 exit_code=None signal=Some(9), staged plaintext quarantined, canonical root preserved, one receipt after retries
+test tests::int14::abrupt_exit_staging_quarantine_is_separate_from_committed_blocks ... ok
+staged Revocation: journal=Some(Unresolved), receipts=1
+stale positive sample #3 Revocation: historical CONFIRMED, returned=false
+staged Expiry: journal=Some(Unresolved), receipts=1
+stale positive sample #3 Expiry: historical CONFIRMED, returned=false
+stale positive sample #3 Unavailable: historical CONFIRMED, returned=false
+staged Unavailable: journal=Some(Unresolved), receipts=1
+stale positive sample #4 Revocation: historical CONFIRMED, returned=true
+stale positive sample #4 Expiry: historical CONFIRMED, returned=true
+staged ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+stale positive sample #4 Unavailable: historical CONFIRMED, returned=true
+test tests::int14::authorization_sampling_races_with_confirmation_and_return ... ok
+before-commit Revocation: journal=Some(Unresolved), receipts=1
+before-commit Expiry: journal=Some(Unresolved), receipts=1
+before-commit Unavailable: journal=Some(Unresolved), receipts=1
+missing-root: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+before-commit ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+after-commit Revocation: journal=Some(Unresolved), receipts=1
+after-commit Expiry: journal=Some(Unresolved), receipts=1
+after-commit Unavailable: journal=Some(Unresolved), receipts=1
+missing-child: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+after-commit ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+during-lookup Revocation: journal=Some(Unresolved), receipts=1
+during-lookup Expiry: journal=Some(Unresolved), receipts=1
+during-lookup Unavailable: journal=Some(Unresolved), receipts=1
+corrupt-child: no rewrite on lookup/retry; atomic repair restored readback; historical receipt unchanged
+test tests::int14::historical_receipt_survives_storage_fault_and_atomic_repair ... ok
+during-lookup ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+historical Revocation: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+1 canonical block keys shared; concurrent reader saw old graph and no partial receipt; inventory serialized with writer
+test tests::int14::shared_blocks_and_inventory_during_publication ... ok
+historical Expiry: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+INT08 source revocation after snapshot: in-flight return confirmed; next execution denied
+test tests::int14::source_revocation_after_snapshot_only_affects_later_execution ... ok
+historical Unavailable: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+historical ConcurrentRegrant: journal=Some(Confirmed(ConfirmedReceipt { remote_id: "local-8ae062e47bf17dccd56f27bd97706c4a758a9f7940e96628e99c8ddabd7d8eea", ipfs: Some(VerifiedIpfs(Cid(QmWAqeaLjLgneLweSTxhQp6KVkVcKp3ZQMLaKvCemDnyYc))) })), receipts=1
+test tests::int14::authority_matrix ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 11.72s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ s=0
++ printf 'int14 exit=%s\n' 0
+int14 exit=0
++ exit 0

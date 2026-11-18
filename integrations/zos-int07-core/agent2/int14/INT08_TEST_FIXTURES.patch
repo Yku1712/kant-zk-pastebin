@@ -1,0 +1,28 @@
+--- a/integrations/zos-int08-authorized-artifact-bridge/tests/adversarial.rs
++++ b/integrations/zos-int08-authorized-artifact-bridge/tests/adversarial.rs
+@@ -146,10 +146,20 @@
+ struct Evidence;
+ impl ReceiptEvidence for Evidence {
+-    fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+-        Ok(BODY.to_vec())
+-    }
+-
+-    fn verified_ipfs_bytes(&self, _: &Intent, _: &cid::Cid) -> Result<Vec<u8>, Error> {
++    fn published_bytes(
++        &self,
++        _: &Intent,
++        _: &ReceiptCandidate,
++        out: &mut dyn zos_int07_core::EvidenceOutput,
++    ) -> Result<(), Error> {
++        out.append(BODY)
++    }
++
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &cid::Cid,
++        _: &mut dyn zos_int07_core::EvidenceOutput,
++    ) -> Result<(), Error> {
+         Err(Error::InvalidReceipt)
+     }
+ }

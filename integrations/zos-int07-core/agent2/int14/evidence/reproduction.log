@@ -1,0 +1,270 @@
++ trap 'status=$?; printf "reproduction exit=%s\n" "$status"' EXIT
++ source /workspace/work/int07-env
+++ export CARGO_HOME=/workspace/work/cargo
+++ CARGO_HOME=/workspace/work/cargo
+++ export RUSTUP_HOME=/workspace/work/rustup
+++ RUSTUP_HOME=/workspace/work/rustup
+++ export PATH=/workspace/work/cargo/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback
+++ PATH=/workspace/work/cargo/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/override:/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin:/opt/codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/agent/.local/bin:/opt/codex/runtimes/codex-primary-runtime/dependencies/bin/fallback
++ git init /workspace/work/int14.OGBgzK/repo
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /workspace/work/int14.OGBgzK/repo/.git/
++ cd /workspace/work/int14.OGBgzK/repo
++ git remote add origin https://github.com/Yku1712/kant-zk-pastebin.git
++ pin=113ec894865a6f16c8d8f9bdfc559c72abd02c82
++ writer=8cb627b41bd53a555557d7e46a5c1c1070d15dde
++ legacy=a9dde4d712dc0c99c3ef2b30d92ef49723695c77
++ git fetch --no-tags origin 113ec894865a6f16c8d8f9bdfc559c72abd02c82 a9dde4d712dc0c99c3ef2b30d92ef49723695c77
+From https://github.com/Yku1712/kant-zk-pastebin
+ * branch            113ec894865a6f16c8d8f9bdfc559c72abd02c82 -> FETCH_HEAD
+ * branch            a9dde4d712dc0c99c3ef2b30d92ef49723695c77 -> FETCH_HEAD
++ git switch -c review/zos-int14-security-recovery-agent2 113ec894865a6f16c8d8f9bdfc559c72abd02c82
+Switched to a new branch 'review/zos-int14-security-recovery-agent2'
+++ git rev-parse 'HEAD^'
++ test 361fae9395e4c7a18bbecf0099f2c613cc785d6d = 361fae9395e4c7a18bbecf0099f2c613cc785d6d
++ git rev-parse HEAD 'HEAD^{tree}' 8cb627b41bd53a555557d7e46a5c1c1070d15dde a9dde4d712dc0c99c3ef2b30d92ef49723695c77
+113ec894865a6f16c8d8f9bdfc559c72abd02c82
+b8371188f9c7aabec8c6bd35fecfbf842f70e279
+8cb627b41bd53a555557d7e46a5c1c1070d15dde
+a9dde4d712dc0c99c3ef2b30d92ef49723695c77
++ mkdir /workspace/work/int14.OGBgzK/export /workspace/work/int14.OGBgzK/writer
++ git archive 113ec894865a6f16c8d8f9bdfc559c72abd02c82
++ tar -x -C /workspace/work/int14.OGBgzK/export
++ git archive 8cb627b41bd53a555557d7e46a5c1c1070d15dde Cargo.toml src/ipfs.rs
++ tar -x -C /workspace/work/int14.OGBgzK/writer
++ dir=/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2
++ git -C /workspace/work/int14.OGBgzK/writer apply /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
++ sha256sum /workspace/work/int14.OGBgzK/writer/src/ipfs.rs /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
+96d4df2a8a2bf9984216cbdfb077e5d0420d51b61cbb43e114b69325f420b68f  /workspace/work/int14.OGBgzK/writer/src/ipfs.rs
+a190e593740a36c06c2b8365eb4422108765b8539fee87bcfaf8f1459a4fbe86  /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int11/INT11_FAIL_CLOSED_PRODUCER.patch
++ rustc -vV
+rustc 1.95.0 (59807616e 2026-04-14)
+binary: rustc
+commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+commit-date: 2026-04-14
+host: x86_64-unknown-linux-gnu
+release: 1.95.0
+LLVM version: 22.1.2
++ cargo -vV
+cargo 1.95.0 (f2d3ce0bd 2026-03-21)
+release: 1.95.0
+commit-hash: f2d3ce0bd7f24a49f8f72d9000448f8838c4e850
+commit-date: 2026-03-21
+host: x86_64-unknown-linux-gnu
+libgit2: 1.9.2 (sys:0.20.4 vendored)
+libcurl: 8.15.0-DEV (sys:0.4.83+curl-8.15.0 vendored ssl:OpenSSL/3.5.4)
+ssl: OpenSSL 3.5.4 30 Sep 2025
+os: Debian 13.0.0 [64-bit]
++ cc --version
+cc (Debian 14.2.0-19) 14.2.0
+Copyright (C) 2024 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
++ git --version
+git version 2.52.0
++ uname -sm
+Linux x86_64
++ stat -f -c %T /workspace/work/int14.OGBgzK
+overlayfs
++ cd /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13
++ sha256sum -c SHA256SUMS
+../../../zos-int08-authorized-artifact-bridge/Cargo.toml: OK
+../../../zos-int08-authorized-artifact-bridge/LICENSE: OK
+../../../zos-int08-authorized-artifact-bridge/src/lib.rs: OK
+.gitignore: OK
+Cargo.lock: OK
+Cargo.toml: OK
+INT13_INTEGRATION_REPORT.md: OK
+evidence/baselines.log: OK
+evidence/int08-contract.log: OK
+evidence/int08-manifest.log: OK
+evidence/int08-original-tests.log: OK
+evidence/producer.log: OK
+evidence/validation.log: OK
+src/lib.rs: OK
+src/tests.rs: OK
++ INT11_PASTEBIN_SOURCE=/workspace/work/int14.OGBgzK/writer/src/ipfs.rs
++ cargo build --locked --offline --manifest-path /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int11/probe/Cargo.toml --features patched-writer --target-dir /workspace/work/int14.OGBgzK/producer-target
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling typenum v1.20.1
+   Compiling syn v2.0.119
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling hashbrown v0.17.1
+   Compiling winnow v1.0.5
+   Compiling unsigned-varint v0.8.0
+   Compiling data-encoding v2.11.0
+   Compiling cfg-if v1.0.5
+   Compiling equivalent v1.0.3
+   Compiling indexmap v2.14.2
+   Compiling multihash v0.19.5
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling hybrid-array v0.4.15
+   Compiling data-encoding-macro-internal v0.1.18
+   Compiling match-lookup v0.1.3
+   Compiling const-str v0.4.3
+   Compiling toml_datetime v1.1.3+spec-1.1.0
+   Compiling libc v0.2.191
+   Compiling toml_edit v0.25.19+spec-1.1.0
+   Compiling base256emoji v1.0.2
+   Compiling data-encoding-macro v0.1.20
+   Compiling base45 v3.2.0
+   Compiling base-x v0.2.11
+   Compiling proc-macro-crate v3.5.0
+   Compiling multibase v0.9.3
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling synstructure v0.13.2
+   Compiling thiserror v1.0.69
+   Compiling digest v0.11.3
+   Compiling cid v0.11.3
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling thiserror-impl v1.0.69
+   Compiling multihash-derive-impl v0.1.3
+   Compiling getrandom v0.4.3
+   Compiling cpufeatures v0.3.1
+   Compiling rustix v1.1.6
+   Compiling byteorder v1.5.0
+   Compiling quick-protobuf v0.8.1
+   Compiling sha2 v0.11.0
+   Compiling multihash-derive v0.9.3
+   Compiling digest v0.10.7
+   Compiling ipld-core v0.4.3
+   Compiling cpufeatures v0.2.17
+   Compiling linux-raw-sys v0.12.1
+   Compiling bytes v1.11.1
+   Compiling bitflags v2.13.2
+   Compiling ipld-dagpb v0.2.2
+   Compiling sha2 v0.10.9
+   Compiling multihash-codetable v0.2.2
+   Compiling filetime v0.2.29
+   Compiling pastebin-writer-probe v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int11/probe)
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling either v1.16.0
+   Compiling tempfile v3.27.0
+   Compiling rust-unixfs v0.5.1
+   Compiling log v0.4.33
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.29s
++ export INT13_PROBE=/workspace/work/int14.OGBgzK/producer-target/debug/pastebin-writer-probe
++ INT13_PROBE=/workspace/work/int14.OGBgzK/producer-target/debug/pastebin-writer-probe
++ sha256sum /workspace/work/int14.OGBgzK/producer-target/debug/pastebin-writer-probe
+2256ae5ebac905b025e634570ffb3843cffc6cfe55b7535c7b07c8aa7d79c339  /workspace/work/int14.OGBgzK/producer-target/debug/pastebin-writer-probe
++ export CARGO_TARGET_DIR=/workspace/work/int14.OGBgzK/int13-target
++ CARGO_TARGET_DIR=/workspace/work/int14.OGBgzK/int13-target
++ cargo test --locked --offline --manifest-path /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored --skip tests::crash_child --nocapture
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.27
+   Compiling version_check v0.9.5
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling shlex v2.0.1
+   Compiling typenum v1.20.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling cc v1.11.2
+   Compiling syn v2.0.119
+   Compiling syn v3.0.10
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling data-encoding v2.11.1
+   Compiling match-lookup v0.1.3
+   Compiling libsqlite3-sys v0.35.0
+   Compiling foldhash v0.1.5
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling const-str v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling bitflags v2.13.2
+   Compiling base256emoji v1.0.2
+   Compiling hashbrown v0.15.5
+   Compiling data-encoding-macro v0.1.21
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling base45 v3.2.0
+   Compiling base-x v0.2.11
+   Compiling unsigned-varint v0.8.0
+   Compiling multihash v0.19.5
+   Compiling multibase v0.9.3
+   Compiling digest v0.10.7
+   Compiling hashlink v0.10.0
+   Compiling smallvec v1.16.6
+   Compiling rustix v1.1.6
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling cpufeatures v0.2.17
+   Compiling libc v0.2.191
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling getrandom v0.4.3
+   Compiling linux-raw-sys v0.12.1
+   Compiling fastrand v2.5.0
+   Compiling once_cell v1.21.4
+   Compiling tempfile v3.27.0
+   Compiling rusqlite v0.37.0
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core)
+   Compiling zos-unixfs-readback v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/unixfs)
+   Compiling zos-ipfs-local-durability v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int12)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int08-authorized-artifact-bridge)
+   Compiling zos-int13-isolated-e2e v0.1.0 (/workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 21.56s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/zos_int13_isolated_e2e-ac64ef1bd2acb98f)
+
+running 8 tests
+authentic staged child altered: journal unresolved, provider receipt absent
+authentic staged child missing: journal unresolved, provider receipt absent
+test tests::authentic_staged_child_mutations_never_confirm ... ok
+test tests::another_readback_detects_corruption_after_confirmation ... ok
+test tests::lost_ack_with_valid_local_receipt_is_reconciled_read_only ... ok
+test tests::oversized_authorized_snapshot_is_rejected_before_staging_or_receipt ... ok
+test tests::concurrent_identical_retry_is_idempotent_and_conflicting_revision_is_denied ... ok
+during promotion: revocation withheld bridge confirmation; one local receipt retained
+SIGKILL before destination COMMIT: bridge was unresolved; recovered one receipt, stages=1
+during promotion: expiry withheld bridge confirmation; one local receipt retained
+test tests::revocation_or_expiry_during_promotion_blocks_bridge_confirmation ... ok
+test tests::unauthorized_expired_revoked_wrong_revision_or_wrong_digest_never_stage ... ok
+SIGKILL after destination COMMIT: bridge was unresolved; recovered one receipt, stages=0
+test tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 1.56s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ cargo test --locked --offline --manifest-path /workspace/work/int14.OGBgzK/export/integrations/zos-int07-core/agent2/int13/Cargo.toml -- --ignored --exact tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts --nocapture
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/zos_int13_isolated_e2e-ac64ef1bd2acb98f)
+
+running 1 test
+SIGKILL before destination COMMIT: bridge was unresolved; recovered one receipt, stages=1
+SIGKILL after destination COMMIT: bridge was unresolved; recovered one receipt, stages=0
+test tests::sigkill_before_and_after_destination_commit_reconciles_without_duplicate_receipts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.65s
+
+   Doc-tests zos_int13_isolated_e2e
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
++ status=0
++ printf 'reproduction exit=%s\n' 0
+reproduction exit=0

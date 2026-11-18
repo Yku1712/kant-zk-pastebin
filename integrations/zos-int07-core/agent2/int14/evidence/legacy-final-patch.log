@@ -1,0 +1,33 @@
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int14.OGBgzK/compat/integrations/zos-int08-authorized-artifact-bridge)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.50s
+     Running unittests src/lib.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/zos_int08_authorized_artifact_bridge-569d12f965d48a95)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/adversarial.rs (/workspace/work/int14.OGBgzK/int13-target/debug/deps/adversarial-810d19636e74ad6e)
+
+running 12 tests
+test authorized_public_revision ... ok
+test cross_tenant_request ... ok
+test digest_mismatch ... ok
+test inconsistent_source_snapshot ... ok
+test missing_artifact ... ok
+test public_to_private_policy_transition ... ok
+test reader_with_read_access_still_lacks_public_release ... ok
+test revision_substitution ... ok
+test source_namespace_is_part_of_the_grant ... ok
+test stale_grant ... ok
+test unauthorized_principal ... ok
+test confirmed_operation_cannot_be_reused_after_revocation ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests zos_int08_authorized_artifact_bridge
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+Final patch application, fixture byte comparison and Cargo test exit=0
