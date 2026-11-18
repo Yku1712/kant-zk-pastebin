@@ -1,0 +1,34 @@
+d53b4ca8cafbaea5cf11bbb508bb75ced5081585
+.gitignore: raw Git bytes match=True; CRLF conversion matches=False
+AGENT_2_HANDOFF.md: raw Git bytes match=True; CRLF conversion matches=False
+Cargo.lock: raw Git bytes match=True; CRLF conversion matches=False
+Cargo.toml: raw Git bytes match=True; CRLF conversion matches=False
+INT07_20_CONTRACT_AUDIT.md: raw Git bytes match=True; CRLF conversion matches=False
+INT07_22_SQLITE_RECOVERY.md: raw Git bytes match=True; CRLF conversion matches=False
+LICENSE: raw Git bytes match=True; CRLF conversion matches=False
+README.md: raw Git bytes match=True; CRLF conversion matches=False
+evidence/toolchain.txt: raw Git bytes match=True; CRLF conversion matches=False
+evidence/validation.log: raw Git bytes match=True; CRLF conversion matches=False
+rust-toolchain.toml: raw Git bytes match=True; CRLF conversion matches=False
+src/journal.rs: raw Git bytes match=True; CRLF conversion matches=False
+src/journal/tests.rs: raw Git bytes match=True; CRLF conversion matches=False
+src/lib.rs: raw Git bytes match=True; CRLF conversion matches=False
+tests/publication.rs: raw Git bytes match=True; CRLF conversion matches=False
+8217990a110cbfa96aae7dfd149a65ab4ddc0120
+.gitignore: raw Git bytes match=False; CRLF conversion matches=True
+AGENT_2_HANDOFF.md: raw Git bytes match=False; CRLF conversion matches=True
+Cargo.lock: raw Git bytes match=False; CRLF conversion matches=True
+Cargo.toml: raw Git bytes match=False; CRLF conversion matches=True
+INT07_20_CONTRACT_AUDIT.md: raw Git bytes match=False; CRLF conversion matches=True
+INT07_22_SQLITE_RECOVERY.md: raw Git bytes match=False; CRLF conversion matches=True
+INT07_INDEPENDENT_VERIFICATION.md: raw Git bytes match=False; CRLF conversion matches=True
+LICENSE: raw Git bytes match=False; CRLF conversion matches=True
+README.md: raw Git bytes match=False; CRLF conversion matches=True
+evidence/independent_validation.log: raw Git bytes match=False; CRLF conversion matches=True
+evidence/toolchain.txt: raw Git bytes match=False; CRLF conversion matches=True
+evidence/validation.log: raw Git bytes match=False; CRLF conversion matches=True
+rust-toolchain.toml: raw Git bytes match=False; CRLF conversion matches=True
+src/journal.rs: raw Git bytes match=False; CRLF conversion matches=True
+src/journal/tests.rs: raw Git bytes match=False; CRLF conversion matches=True
+src/lib.rs: raw Git bytes match=False; CRLF conversion matches=True
+tests/publication.rs: raw Git bytes match=False; CRLF conversion matches=True

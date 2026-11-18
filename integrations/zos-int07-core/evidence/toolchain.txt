@@ -1,3 +1,6 @@
+INT07-23 environment
+Frozen source 8217990a110cbfa96aae7dfd149a65ab4ddc0120
+Linux x86_64
 rustc 1.95.0 (59807616e 2026-04-14)
 binary: rustc
 commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
@@ -11,9 +14,8 @@ rustfmt 1.9.0-stable (59807616e1 2026-04-14)
 cc (Debian 14.2.0-19) 14.2.0
 GNU ld (GNU Binutils for Debian) 2.44
 git version 2.52.0
-Linux x86_64
 #define SQLITE_VERSION        "3.50.2"
-zos-int07-core v0.1.0 ([crate-directory])
+zos-int07-core v0.1.0 (/workspace/work/int0723/repo/integrations/zos-int07-core)
 ├── cid v0.11.3
 │   ├── multibase v0.9.3
 │   │   ├── base-x v0.2.11
