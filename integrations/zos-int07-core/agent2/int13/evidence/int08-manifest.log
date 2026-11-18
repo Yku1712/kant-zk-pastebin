@@ -1,0 +1,14 @@
+INT08 snapshot a9dde4d712dc0c99c3ef2b30d92ef49723695c77
+AUTHORITY_CONTRACT.md: raw matches=False; CRLF matches=True; raw sha256=3e54f29d2239a791c64ecb7f08c6220924a000f44b4df650038f1cf7f64b023a
+Cargo.lock: raw matches=False; CRLF matches=True; raw sha256=bd5b83abdccbe643d17b1fda2784a70270ce97dbe059545483d39e44642843dd
+Cargo.toml: raw matches=False; CRLF matches=True; raw sha256=6c5771aaa944c3979cf20ea50fea94cebb0252a9285e7fb59c62a5a74b0a11c6
+LICENSE: raw matches=False; CRLF matches=True; raw sha256=cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+README.md: raw matches=False; CRLF matches=True; raw sha256=5564fd5331b50788a203fd9ea1bcaa89682f31c13a4433a460e8435f25af9efb
+SECURITY_ANALYSIS.md: raw matches=False; CRLF matches=True; raw sha256=d20b3b0663429cfaffb8b300a1e9db3153ca5f313c4217403abb8239815ab893
+evidence/locked_validation.log: raw matches=False; CRLF matches=True; raw sha256=9668b7e4854e3e4e70d6ccb26e64009ca4973353a307c2738e124b333b40ce16
+evidence/source_references.txt: raw matches=False; CRLF matches=True; raw sha256=0348504065372e00c1d0a721121c521184e5af523c17409817b5c33d735b49ae
+evidence/toolchain.txt: raw matches=False; CRLF matches=True; raw sha256=8e8f1f6e91994918122ae66b560824f074649c9767453e7fc5b1a7a537bb8a76
+evidence/validation.log: raw matches=False; CRLF matches=True; raw sha256=149e3decc45465383df88374ac816c901219d08fb0ca2cc77123a85560158eb7
+rust-toolchain.toml: raw matches=False; CRLF matches=True; raw sha256=7d21c66a15f41bad66b82ed06a289f5dc8a6e3751951d2696bbf20ce296f2b0f
+src/lib.rs: raw matches=False; CRLF matches=True; raw sha256=47c68aa13280fb0428f5f7e21daf842d5e1ff56591ab1ef00536dd87f7e51271
+tests/adversarial.rs: raw matches=False; CRLF matches=True; raw sha256=2393a72fb35237cc21969993138db897c04afada1f231bfabcec38383e9945a4

@@ -1,0 +1,59 @@
+
+$ git rev-parse HEAD
+361fae9395e4c7a18bbecf0099f2c613cc785d6d
+[exit 0]
+
+$ cargo fmt --all --check
+[exit 0]
+
+$ cargo test --locked --offline
+   Compiling typenum v1.20.1
+   Compiling data-encoding v2.11.1
+   Compiling generic-array v0.14.7
+   Compiling data-encoding-macro-internal v0.1.19
+   Compiling const-str v0.4.3
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling base256emoji v1.0.2
+   Compiling data-encoding-macro v0.1.21
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling base-x v0.2.11
+   Compiling unsigned-varint v0.8.0
+   Compiling base45 v3.2.0
+   Compiling multihash v0.19.5
+   Compiling multibase v0.9.3
+   Compiling hashlink v0.10.0
+   Compiling digest v0.10.7
+   Compiling libsqlite3-sys v0.35.0
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling smallvec v1.16.5
+   Compiling fallible-iterator v0.3.0
+   Compiling cpufeatures v0.2.17
+   Compiling bitflags v2.13.2
+   Compiling cfg-if v1.0.5
+   Compiling rusqlite v0.37.0
+   Compiling sha2 v0.10.9
+   Compiling cid v0.11.3
+   Compiling zos-int07-core v0.1.0 (/workspace/work/int13/repo/integrations/zos-int07-core)
+   Compiling zos-int08-authorized-artifact-bridge v0.1.0 (/workspace/work/int13/repo/integrations/zos-int08-authorized-artifact-bridge)
+error[E0050]: method `published_bytes` has 3 parameters but the declaration in trait `published_bytes` has 4
+   --> tests/adversarial.rs:148:24
+    |
+148 |     fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+    |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `published_bytes` from trait: `fn(&Self, &Intent, &ReceiptCandidate, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+error[E0050]: method `verified_ipfs_bytes` has 3 parameters but the declaration in trait `verified_ipfs_bytes` has 4
+   --> tests/adversarial.rs:152:28
+    |
+152 |     fn verified_ipfs_bytes(&self, _: &Intent, _: &cid::Cid) -> Result<Vec<u8>, Error> {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 4 parameters, found 3
+    |
+    = note: `verified_ipfs_bytes` from trait: `fn(&Self, &Intent, &CidGeneric<64>, &mut dyn EvidenceOutput) -> Result<(), zos_int07_core::Error>`
+
+For more information about this error, try `rustc --explain E0050`.
+error: could not compile `zos-int08-authorized-artifact-bridge` (test "adversarial") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+[exit 101]

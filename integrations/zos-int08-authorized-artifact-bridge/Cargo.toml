@@ -1,0 +1,14 @@
+[package]
+name = "zos-int08-authorized-artifact-bridge"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[dependencies]
+cid = "0.11"
+sha2 = "0.10"
+zos-int07-core = { path = "../zos-int07-core" }

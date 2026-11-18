@@ -1,0 +1,52 @@
+
+$ git rev-parse HEAD
+361fae9395e4c7a18bbecf0099f2c613cc785d6d
+[exit 0]
+
+$ git diff --exit-code dc748bb007e458bb88fb4b24647e40809b188d5c HEAD -- integrations/zos-int07-core/src integrations/zos-int07-core/Cargo.toml integrations/zos-int07-core/Cargo.lock
+[exit 0]
+
+$ git diff --exit-code ec90d56a74dbd0810fcd4849f42633386a4207f7 HEAD -- integrations/zos-int07-core/agent2/unixfs/src integrations/zos-int07-core/agent2/unixfs/Cargo.toml integrations/zos-int07-core/agent2/unixfs/Cargo.lock
+[exit 0]
+
+$ git diff --exit-code 8cb627b41bd53a555557d7e46a5c1c1070d15dde HEAD -- src/ipfs.rs integrations/zos-int07-core/agent2/int11
+[exit 0]
+
+$ git diff --exit-code 361fae9395e4c7a18bbecf0099f2c613cc785d6d HEAD -- integrations/zos-int07-core/agent2/int12
+[exit 0]
+
+$ git rev-parse a9dde4d712dc0c99c3ef2b30d92ef49723695c77:integrations/zos-int08-authorized-artifact-bridge
+e5f40fb9b39d126bdba6abab8804b480ee5e260f
+[exit 0]
+
+$ sha256sum --check --status SHA256SUMS
+[exit 0]
+
+$ sha256sum --check --status SHA256SUMS
+[exit 0]
+
+$ sha256sum --check --status SHA256SUMS
+[exit 0]
+
+$ sha256sum --check --status SHA256SUMS
+[exit 0]
+
+$ gh api repos/Yku1712/kant-zk-pastebin/pulls/5 --jq \[.number\,.head.ref\,.head.sha\,.base.ref\,.draft\]\|@tsv
+5	review/zos-int08-authorized-artifact-bridge	a9dde4d712dc0c99c3ef2b30d92ef49723695c77	review/zos-int07-core-agent1	true
+[exit 0]
+
+$ gh api repos/Yku1712/kant-zk-pastebin/pulls/6 --jq \[.number\,.head.ref\,.head.sha\,.base.ref\,.draft\]\|@tsv
+6	review/zos-int07-security-hardening-agent2	dc748bb007e458bb88fb4b24647e40809b188d5c	review/zos-int07-security-agent2	true
+[exit 0]
+
+$ gh api repos/Yku1712/kant-zk-pastebin/pulls/7 --jq \[.number\,.head.ref\,.head.sha\,.base.ref\,.draft\]\|@tsv
+7	review/zos-int10-unixfs-agent2	ec90d56a74dbd0810fcd4849f42633386a4207f7	review/zos-int07-security-hardening-agent2	true
+[exit 0]
+
+$ gh api repos/Yku1712/kant-zk-pastebin/pulls/8 --jq \[.number\,.head.ref\,.head.sha\,.base.ref\,.draft\]\|@tsv
+8	review/zos-int11-producer-compat-agent2	8cb627b41bd53a555557d7e46a5c1c1070d15dde	review/zos-int10-unixfs-agent2	true
+[exit 0]
+
+$ gh api repos/Yku1712/kant-zk-pastebin/pulls/9 --jq \[.number\,.head.ref\,.head.sha\,.base.ref\,.draft\]\|@tsv
+9	review/zos-int12-storage-durability-agent2	361fae9395e4c7a18bbecf0099f2c613cc785d6d	review/zos-int11-producer-compat-agent2	true
+[exit 0]
