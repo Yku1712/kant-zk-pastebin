@@ -9,7 +9,8 @@ flags, share tokens, or caller-supplied metadata.
 
 The real source audit is [AUTHORITY_CONTRACT.md](AUTHORITY_CONTRACT.md). The fail-closed analysis is
 [SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md). Validation output is in
-[evidence/validation.log](evidence/validation.log).
+[evidence/validation.log](evidence/validation.log) and the final locked reproduction is in
+[evidence/locked_validation.log](evidence/locked_validation.log).
 
 ## Status
 
