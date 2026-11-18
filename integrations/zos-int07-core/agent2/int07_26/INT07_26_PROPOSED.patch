@@ -1,0 +1,1342 @@
+diff --git a/integrations/zos-int07-core/agent2/experimental/src/lib.rs b/integrations/zos-int07-core/agent2/experimental/src/lib.rs
+index df5afbc..3e572df 100644
+--- a/integrations/zos-int07-core/agent2/experimental/src/lib.rs
++++ b/integrations/zos-int07-core/agent2/experimental/src/lib.rs
+@@ -9,10 +9,11 @@ use std::{
+     time::Duration,
+ };
+ use zos_int07_core::{
+-    ContentDigest, Destination, Error, Intent, ReceiptCandidate, ReceiptEvidence,
++    ContentDigest, Destination, DurableRetry, Error, EvidenceOutput, Intent, MAX_PUBLICATION_BYTES,
++    ReceiptCandidate, ReceiptEvidence,
+ };
+ 
+-pub const MAX_BYTES: usize = 1024 * 1024;
++pub const MAX_BYTES: usize = MAX_PUBLICATION_BYTES;
+ const APP_ID: i64 = 0x5a4f_4432;
+ 
+ pub struct LocalDestination {
+@@ -116,12 +117,16 @@ fn schema(conn: &Connection) -> Result<(i64, i64), Error> {
+     ))
+ }
+ 
+-fn read_body(conn: &Connection, operation: &str) -> Result<Option<Vec<u8>>, Error> {
++fn read_body(
++    conn: &Connection,
++    operation: &str,
++    max_bytes: usize,
++) -> Result<Option<Vec<u8>>, Error> {
+     Ok(conn
+         .query_row(
+             "SELECT body FROM published_payload WHERE operation = ?1
+                 AND length(body) BETWEEN 1 AND ?2",
+-            params![operation, MAX_BYTES],
++            params![operation, max_bytes],
+             |row| row.get(0),
+         )
+         .optional()?)
+@@ -158,7 +163,7 @@ impl Destination for LocalDestination {
+              ON CONFLICT(operation) DO NOTHING",
+             params![operation, body],
+         )?;
+-        if read_body(&tx, &operation)?.as_deref() != Some(body) {
++        if read_body(&tx, &operation, MAX_BYTES)?.as_deref() != Some(body) {
+             return Err(Error::JournalConflict);
+         }
+         tx.commit()?;
+@@ -176,6 +181,12 @@ impl Destination for LocalDestination {
+         Ok(found.then(|| candidate(intent)))
+     }
+ 
++    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
++        Some(self)
++    }
++}
++
++impl DurableRetry for LocalDestination {
+     fn retry_idempotently(
+         &self,
+         intent: &Intent,
+@@ -190,7 +201,8 @@ impl ReceiptEvidence for LocalDestination {
+         &self,
+         intent: &Intent,
+         receipt: &ReceiptCandidate,
+-    ) -> Result<Vec<u8>, Error> {
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
+         let expected = candidate(intent);
+         if receipt.operation != expected.operation
+             || receipt.remote_id != expected.remote_id
+@@ -202,15 +214,24 @@ impl ReceiptEvidence for LocalDestination {
+         }
+         let conn = self.open_connection(OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+         self.validate(&conn, intent)?;
+-        let body =
+-            read_body(&conn, &intent.operation().to_string())?.ok_or(Error::InvalidReceipt)?;
++        let body = read_body(
++            &conn,
++            &intent.operation().to_string(),
++            out.remaining().min(MAX_BYTES),
++        )?
++        .ok_or(Error::InvalidReceipt)?;
+         if ContentDigest::of(&body) != expected.witness {
+             return Err(Error::DigestMismatch);
+         }
+-        Ok(body)
++        out.append(&body)
+     }
+ 
+-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &Cid,
++        _: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
+         Err(Error::InvalidReceipt)
+     }
+ }
+diff --git a/integrations/zos-int07-core/agent2/experimental/tests/local_destination.rs b/integrations/zos-int07-core/agent2/experimental/tests/local_destination.rs
+index 06380ec..85dca47 100644
+--- a/integrations/zos-int07-core/agent2/experimental/tests/local_destination.rs
++++ b/integrations/zos-int07-core/agent2/experimental/tests/local_destination.rs
+@@ -14,8 +14,8 @@ use std::{
+ };
+ use zos_int07_core::{
+     ArtifactRevision, AuthorizedSnapshot, AuthorizedSource, BodyKind, ContentDigest, Destination,
+-    Error, Intent, Journal, OperationState, PublicationEligibility, Publisher, ReceiptCandidate,
+-    ReceiptEvidence, Recovery, Release,
++    DurableRetry, Error, EvidenceSink, Intent, Journal, OperationState, PublicationEligibility,
++    Publisher, ReceiptCandidate, ReceiptEvidence, Recovery, Release,
+ };
+ use zos_int07_local_destination::{LocalDestination, MAX_BYTES};
+ 
+@@ -153,7 +153,11 @@ fn committed_provider_write_survives_lost_response_and_reopens_for_readback() {
+         evidence: &reopened,
+     };
+     let receipt = reopened.lookup(&intent).unwrap().unwrap();
+-    assert_eq!(reopened.published_bytes(&intent, &receipt).unwrap(), BODY);
++    let mut output = EvidenceSink::default();
++    reopened
++        .published_bytes(&intent, &receipt, &mut output)
++        .unwrap();
++    assert_eq!(output.finish().unwrap(), ContentDigest::of(BODY));
+     assert!(matches!(
+         caller.execute(&mut journal, &(), &intent, Recovery::LookupOnly),
+         Ok(OperationState::Confirmed(confirmed)) if confirmed.remote_id() == receipt.remote_id
+@@ -189,6 +193,12 @@ impl Destination for Overlap<'_> {
+         self.inner.lookup(intent)
+     }
+ 
++    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
++        Some(self)
++    }
++}
++
++impl DurableRetry for Overlap<'_> {
+     fn retry_idempotently(
+         &self,
+         intent: &Intent,
+@@ -277,14 +287,135 @@ fn provider_limits_input_and_binds_readback_to_operation_and_instance() {
+     .unwrap();
+     assert!(local.lookup(&another_scope).unwrap().is_none());
+     assert!(matches!(
+-        local.published_bytes(&another_scope, &receipt),
++        local.published_bytes(&another_scope, &receipt, &mut EvidenceSink::default()),
+         Err(Error::InvalidReceipt)
+     ));
+     let mut changed = receipt;
+     changed.remote_id = "unrelated-record".into();
+     assert!(matches!(
+-        local.published_bytes(&original, &changed),
++        local.published_bytes(&original, &changed, &mut EvidenceSink::default()),
+         Err(Error::InvalidReceipt)
+     ));
+     assert_eq!(temp.stored_count(), 1);
+ }
++
++#[test]
++fn local_readback_does_not_append_oversize_or_corrupted_payload() {
++    use zos_int07_core::EvidenceOutput;
++
++    struct LimitedOutput(usize);
++    impl EvidenceOutput for LimitedOutput {
++        fn remaining(&self) -> usize {
++            self.0
++        }
++        fn append(&mut self, _: &[u8]) -> Result<(), Error> {
++            panic!("rejected local payload must never reach the output");
++        }
++    }
++
++    let temp = Temp::new();
++    let local = temp.destination();
++    let intent = intent(local.id(), BODY);
++    let receipt = local.submit(&intent, BODY).unwrap();
++    assert!(matches!(
++        local.published_bytes(&intent, &receipt, &mut LimitedOutput(BODY.len() - 1)),
++        Err(Error::InvalidReceipt)
++    ));
++
++    let db = Connection::open(temp.0.join("provider.sqlite")).unwrap();
++    assert_eq!(
++        db.execute(
++            "UPDATE published_payload SET body = ?1",
++            [b"corrupted persisted content".as_slice()],
++        )
++        .unwrap(),
++        1
++    );
++    assert!(matches!(
++        local.published_bytes(&intent, &receipt, &mut LimitedOutput(MAX_BYTES)),
++        Err(Error::DigestMismatch)
++    ));
++    db.pragma_update(None, "user_version", 99).unwrap();
++    assert!(matches!(local.lookup(&intent), Err(Error::JournalConflict)));
++}
++
++struct PausedAfterCommit<'a> {
++    destination: &'a LocalDestination,
++    committed: SyncSender<()>,
++    finish: Mutex<Receiver<()>>,
++}
++
++impl Destination for PausedAfterCommit<'_> {
++    fn id(&self) -> &str {
++        self.destination.id()
++    }
++
++    fn submit(&self, intent: &Intent, body: &[u8]) -> Result<ReceiptCandidate, Error> {
++        let receipt = self.destination.submit(intent, body)?;
++        self.committed
++            .send(())
++            .map_err(|_| Error::ExternalUnavailable)?;
++        self.finish
++            .lock()
++            .map_err(|_| Error::ExternalUnavailable)?
++            .recv_timeout(Duration::from_secs(10))
++            .map_err(|_| Error::ExternalUnavailable)?;
++        Ok(receipt)
++    }
++
++    fn lookup(&self, intent: &Intent) -> Result<Option<ReceiptCandidate>, Error> {
++        self.destination.lookup(intent)
++    }
++}
++
++#[test]
++fn revocation_after_local_provider_commit_keeps_bridge_unresolved() {
++    use std::sync::atomic::AtomicBool;
++
++    struct PolicyState(Policy, AtomicBool);
++    impl PublicationEligibility for PolicyState {
++        fn permits(&self, intent: &Intent) -> Result<bool, Error> {
++            Ok(self.1.load(SeqCst) && self.0.permits(intent)?)
++        }
++    }
++
++    let temp = Temp::new();
++    let local = temp.destination();
++    let intent = intent(local.id(), BODY);
++    let source = Snapshot(intent.artifact().clone());
++    let policy = PolicyState(Policy(intent.clone()), AtomicBool::new(true));
++    let (committed, written) = sync_channel(1);
++    let (finish, resumed) = sync_channel(1);
++    let destination = PausedAfterCommit {
++        destination: &local,
++        committed,
++        finish: Mutex::new(resumed),
++    };
++    let caller = Publisher {
++        source: &source,
++        eligibility: &policy,
++        destination: &destination,
++        evidence: &local,
++    };
++
++    thread::scope(|scope| {
++        let first =
++            scope.spawn(|| caller.execute(&mut temp.journal(), &(), &intent, Recovery::LookupOnly));
++        written.recv_timeout(Duration::from_secs(10)).unwrap();
++        policy.1.store(false, SeqCst);
++        finish.send(()).unwrap();
++        assert!(matches!(first.join().unwrap(), Err(Error::Ineligible)));
++    });
++    let mut journal = temp.journal();
++    assert_eq!(temp.stored_count(), 1);
++    assert!(local.lookup(&intent).unwrap().is_some());
++    assert_eq!(
++        journal.state(&intent).unwrap(),
++        Some(OperationState::Unresolved)
++    );
++    assert!(matches!(
++        caller.execute(&mut journal, &(), &intent, Recovery::RetryIdempotently),
++        Err(Error::Ineligible)
++    ));
++    assert_eq!(temp.stored_count(), 1);
++}
+diff --git a/integrations/zos-int07-core/src/journal.rs b/integrations/zos-int07-core/src/journal.rs
+index 71cb49a..b38c83c 100644
+--- a/integrations/zos-int07-core/src/journal.rs
++++ b/integrations/zos-int07-core/src/journal.rs
+@@ -1,8 +1,8 @@
+ // SPDX-License-Identifier: Apache-2.0
+ 
+ use crate::{
+-    ArtifactRevision, ConfirmedReceipt, ContentDigest, Error, Intent, OperationState, VerifiedIpfs,
+-    valid_identifier,
++    ArtifactRevision, ConfirmedReceipt, ContentDigest, Error, Intent, MAX_CID_BYTES,
++    MAX_IDENTIFIER_BYTES, OperationState, VerifiedIpfs, valid_identifier,
+ };
+ use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
+ use std::{path::Path, time::Duration};
+@@ -174,9 +174,11 @@ impl Journal {
+ fn read_state(connection: &Connection, intent: &Intent) -> Result<Option<OperationState>, Error> {
+     let record = connection
+         .query_row(
+-            "SELECT source, tenant, artifact, revision, digest, destination, state, remote_id, ipfs_cid
++            "SELECT source, tenant, artifact, revision, digest, destination, state,
++                    CASE WHEN length(CAST(remote_id AS BLOB)) > ?2 THEN '' ELSE remote_id END,
++                    CASE WHEN length(CAST(ipfs_cid AS BLOB)) > ?3 THEN '' ELSE ipfs_cid END
+              FROM publication WHERE operation = ?1",
+-            [intent.operation.0],
++            params![intent.operation.0, MAX_IDENTIFIER_BYTES, MAX_CID_BYTES],
+             |row| {
+                 Ok((
+                     ArtifactRevision {
+@@ -206,10 +208,7 @@ fn read_state(connection: &Connection, intent: &Intent) -> Result<Option<Operati
+         ("CONFIRMED", Some(remote_id), ipfs) if valid_identifier(&remote_id) => {
+             let ipfs = ipfs
+                 .map(|value| {
+-                    value
+-                        .parse()
+-                        .map(VerifiedIpfs)
+-                        .map_err(|_| Error::JournalConflict)
++                    VerifiedIpfs::parse(&value, binding.digest).map_err(|_| Error::JournalConflict)
+                 })
+                 .transpose()?;
+             Ok(Some(OperationState::Confirmed(ConfirmedReceipt {
+diff --git a/integrations/zos-int07-core/src/lib.rs b/integrations/zos-int07-core/src/lib.rs
+index e230455..aec2a45 100644
+--- a/integrations/zos-int07-core/src/lib.rs
++++ b/integrations/zos-int07-core/src/lib.rs
+@@ -17,6 +17,7 @@ pub enum Error {
+     Ineligible,
+     UnsupportedBody,
+     DigestMismatch,
++    ResourceLimit,
+     InvalidReceipt,
+     ExternalUnavailable,
+     JournalConflict,
+@@ -32,6 +33,7 @@ impl fmt::Display for Error {
+             Self::Ineligible => "revision has no eligible public release",
+             Self::UnsupportedBody => "unsupported artifact body",
+             Self::DigestMismatch => "artifact or receipt digest mismatch",
++            Self::ResourceLimit => "publication or evidence exceeds the byte limit",
+             Self::InvalidReceipt => "invalid or conflicting external receipt",
+             Self::ExternalUnavailable => "external publication result unavailable",
+             Self::JournalConflict => "journal record or state conflicts with intent",
+@@ -88,7 +90,29 @@ pub struct LocalAlias(pub String);
+ #[derive(Clone, Debug, Eq, PartialEq)]
+ pub struct VerifiedIpfs(Cid);
+ 
++const MAX_CID_BYTES: usize = 256;
++const MAX_IDENTIFIER_BYTES: usize = 512;
++
++/// Maximum bytes in an accepted source body or one stream of receipt evidence.
++pub const MAX_PUBLICATION_BYTES: usize = 1024 * 1024;
++
+ impl VerifiedIpfs {
++    fn parse(value: &str, digest: ContentDigest) -> Result<Self, Error> {
++        if value.len() > MAX_CID_BYTES {
++            return Err(Error::InvalidReceipt);
++        }
++        let root: Cid = value.parse().map_err(|_| Error::InvalidReceipt)?;
++        if root.to_string() != value
++            || !matches!(root.codec(), 0x55 | 0x70)
++            || root.hash().code() != 0x12
++            || root.hash().size() != 32
++            || (root.codec() == 0x55 && root.hash().digest() != digest.0)
++        {
++            return Err(Error::InvalidReceipt);
++        }
++        Ok(Self(root))
++    }
++
+     pub fn cid(&self) -> &Cid {
+         &self.0
+     }
+@@ -187,7 +211,9 @@ impl Intent {
+ }
+ 
+ fn valid_identifier(value: &str) -> bool {
+-    !value.trim().is_empty() && value.len() <= 512 && !value.chars().any(char::is_control)
++    !value.trim().is_empty()
++        && value.len() <= MAX_IDENTIFIER_BYTES
++        && !value.chars().any(char::is_control)
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+@@ -248,31 +274,91 @@ pub trait Destination {
+     /// Read-only reconciliation. An absent or inconclusive result stays unresolved.
+     fn lookup(&self, intent: &Intent) -> Result<Option<ReceiptCandidate>, Error>;
+ 
+-    /// Optional reconciliation by submission. Implement only when the remote side
+-    /// atomically deduplicates by operation ID, including concurrent original submissions
+-    /// and retries after timeout. The default sends nothing.
++    /// Return a capability for this exact destination only after its durable retry
++    /// contract has been independently established. Capable implementations return
++    /// `Some(self)`. Lookup-only is the default.
++    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
++        None
++    }
++}
++
++/// Implement only for providers that atomically deduplicate the same operation across
++/// processes, lost responses, and overlapping first submissions and retries.
++pub trait DurableRetry: Destination {
+     fn retry_idempotently(
+         &self,
+-        _intent: &Intent,
+-        _body: &[u8],
+-    ) -> Result<Option<ReceiptCandidate>, Error> {
+-        Ok(None)
++        intent: &Intent,
++        body: &[u8],
++    ) -> Result<Option<ReceiptCandidate>, Error>;
++}
++
++/// Fixed-capacity streaming hash. A rejected append poisons the sink even if an adapter
++/// ignores the returned error. Adapters must also bound upstream allocations and I/O.
++pub struct EvidenceSink {
++    hash: Sha256,
++    remaining: usize,
++    overflow: bool,
++}
++
++impl Default for EvidenceSink {
++    fn default() -> Self {
++        Self {
++            hash: Sha256::new(),
++            remaining: MAX_PUBLICATION_BYTES,
++            overflow: false,
++        }
++    }
++}
++
++pub trait EvidenceOutput {
++    fn remaining(&self) -> usize;
++    fn append(&mut self, bytes: &[u8]) -> Result<(), Error>;
++}
++
++impl EvidenceOutput for EvidenceSink {
++    fn remaining(&self) -> usize {
++        self.remaining
++    }
++
++    fn append(&mut self, bytes: &[u8]) -> Result<(), Error> {
++        if self.overflow || bytes.len() > self.remaining {
++            self.overflow = true;
++            return Err(Error::ResourceLimit);
++        }
++        self.remaining -= bytes.len();
++        self.hash.update(bytes);
++        Ok(())
++    }
++}
++
++impl EvidenceSink {
++    pub fn finish(self) -> Result<ContentDigest, Error> {
++        if self.overflow {
++            return Err(Error::ResourceLimit);
++        }
++        Ok(ContentDigest(self.hash.finalize().into()))
+     }
+ }
+ 
+-/// Trusted evidence boundary. Implementations must authenticate the destination, check durable
+-/// correlation to the full intent, and retrieve independently observed original payload bytes.
+-/// HTTP success, echoed metadata, a witness, or a local alias alone are insufficient.
++/// Trusted evidence boundary. Authenticate the destination and its durable correlation
++/// to the full intent. Independently stream original bytes through the supplied sink.
++/// HTTP success, echoes, a witness, or a local alias cannot establish publication.
+ pub trait ReceiptEvidence {
+     fn published_bytes(
+         &self,
+         intent: &Intent,
+         receipt: &ReceiptCandidate,
+-    ) -> Result<Vec<u8>, Error>;
++        output: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error>;
+ 
+-    /// Fetch and verify linked block hashes from the requested root and reconstruct the original
+-    /// file. Return an error for unsupported codecs, missing blocks, or unverifiable data.
+-    fn verified_ipfs_bytes(&self, intent: &Intent, root: &Cid) -> Result<Vec<u8>, Error>;
++    /// Verify the linked block hashes and reconstruct a file from this exact root.
++    /// Charge graph work separately, and return errors for missing or unsupported data.
++    fn verified_ipfs_bytes(
++        &self,
++        intent: &Intent,
++        root: &Cid,
++        output: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error>;
+ }
+ 
+ #[derive(Clone, Debug, Eq, PartialEq)]
+@@ -332,14 +418,16 @@ impl<S: AuthorizedSource, P: PublicationEligibility, D: Destination, V: ReceiptE
+                 if snapshot.binding != intent.artifact() {
+                     return Err(Error::InvalidBinding);
+                 }
+-                if snapshot.release != Release::ExplicitlyPublic
+-                    || !self.eligibility.permits(intent)?
+-                {
++                if snapshot.release != Release::ExplicitlyPublic {
+                     return Err(Error::Ineligible);
+                 }
++                self.check_release(intent)?;
+                 if snapshot.kind != BodyKind::SingleFile {
+                     return Err(Error::UnsupportedBody);
+                 }
++                if snapshot.bytes.len() > MAX_PUBLICATION_BYTES {
++                    return Err(Error::ResourceLimit);
++                }
+                 if ContentDigest::of(snapshot.bytes) != intent.artifact.digest {
+                     return Err(Error::DigestMismatch);
+                 }
+@@ -347,22 +435,39 @@ impl<S: AuthorizedSource, P: PublicationEligibility, D: Destination, V: ReceiptE
+                 journal.prepare(intent)?;
+                 let candidate = match journal.claim_or_read(intent)? {
+                     journal::Claim::FirstDispatch => {
++                        self.check_release(intent)?;
+                         self.destination.submit(intent, snapshot.bytes)?
+                     }
+                     journal::Claim::Existing(OperationState::Unresolved) => {
+                         let found = self.destination.lookup(intent)?;
+                         let found = match (found, recovery) {
+-                            (None, Recovery::RetryIdempotently) => self
+-                                .destination
+-                                .retry_idempotently(intent, snapshot.bytes)?,
++                            (None, Recovery::RetryIdempotently) => {
++                                if let Some(capability) = self.destination.durable_retry() {
++                                    if capability.id() != intent.destination()
++                                        || !std::ptr::addr_eq(
++                                            std::ptr::from_ref(self.destination),
++                                            std::ptr::from_ref(capability),
++                                        )
++                                    {
++                                        return Err(Error::InvalidBinding);
++                                    }
++                                    self.check_release(intent)?;
++                                    capability.retry_idempotently(intent, snapshot.bytes)?
++                                } else {
++                                    None
++                                }
++                            }
+                             (found, _) => found,
+                         };
+                         let Some(receipt) = found else {
+-                            return journal.state(intent)?.ok_or(Error::JournalConflict);
++                            let state = journal.state(intent)?.ok_or(Error::JournalConflict)?;
++                            self.check_release(intent)?;
++                            return Ok(state);
+                         };
+                         receipt
+                     }
+                     journal::Claim::Existing(state @ OperationState::Confirmed(_)) => {
++                        self.check_release(intent)?;
+                         return Ok(state);
+                     }
+                     journal::Claim::Existing(OperationState::Prepared) => {
+@@ -370,11 +475,21 @@ impl<S: AuthorizedSource, P: PublicationEligibility, D: Destination, V: ReceiptE
+                     }
+                 };
+                 let receipt = self.verify(intent, &candidate)?;
++                // A remote side effect may already exist. Leave it unresolved when
++                // the release changed, without implying that the external write rolled back.
++                self.check_release(intent)?;
+                 journal.confirm(intent, &receipt)?;
+                 Ok(OperationState::Confirmed(receipt))
+             })
+     }
+ 
++    fn check_release(&self, intent: &Intent) -> Result<(), Error> {
++        if !self.eligibility.permits(intent)? {
++            return Err(Error::Ineligible);
++        }
++        Ok(())
++    }
++
+     fn verify(
+         &self,
+         intent: &Intent,
+@@ -392,34 +507,26 @@ impl<S: AuthorizedSource, P: PublicationEligibility, D: Destination, V: ReceiptE
+         }
+         let ipfs = candidate
+             .ipfs_cid
+-            .as_ref()
+-            .map(|value| value.parse::<Cid>().map_err(|_| Error::InvalidReceipt))
++            .as_deref()
++            .map(|value| VerifiedIpfs::parse(value, intent.artifact.digest))
+             .transpose()?;
+-        let published = self.evidence.published_bytes(intent, candidate)?;
+-        if ContentDigest::of(&published) != intent.artifact.digest {
++        let mut published = EvidenceSink::default();
++        self.evidence
++            .published_bytes(intent, candidate, &mut published)?;
++        if published.finish()? != intent.artifact.digest {
+             return Err(Error::DigestMismatch);
+         }
+         if let Some(root) = &ipfs {
+-            if !matches!(root.codec(), 0x55 | 0x70)
+-                || root.hash().code() != 0x12
+-                || root.hash().size() != 32
+-            {
+-                return Err(Error::InvalidReceipt);
+-            }
+-            let bytes = self.evidence.verified_ipfs_bytes(intent, root)?;
+-            let digest = ContentDigest::of(&bytes);
+-            if digest != intent.artifact.digest {
++            let mut reconstructed = EvidenceSink::default();
++            self.evidence
++                .verified_ipfs_bytes(intent, root.cid(), &mut reconstructed)?;
++            if reconstructed.finish()? != intent.artifact.digest {
+                 return Err(Error::DigestMismatch);
+             }
+-            // Raw blocks can also be verified locally. DAG roots require verified traversal
+-            // by the evidence provider because the root hashes a block, not the whole file.
+-            if root.codec() == 0x55 && root.hash().digest() != digest.0 {
+-                return Err(Error::InvalidReceipt);
+-            }
+         }
+         Ok(ConfirmedReceipt {
+             remote_id: candidate.remote_id.clone(),
+-            ipfs: ipfs.map(VerifiedIpfs),
++            ipfs,
+         })
+     }
+ }
+diff --git a/integrations/zos-int07-core/tests/adversarial_security_suite.rs b/integrations/zos-int07-core/tests/adversarial_security_suite.rs
+index 8aa86eb..08e3d50 100644
+--- a/integrations/zos-int07-core/tests/adversarial_security_suite.rs
++++ b/integrations/zos-int07-core/tests/adversarial_security_suite.rs
+@@ -15,8 +15,8 @@ use std::{
+ };
+ use zos_int07_core::{
+     ArtifactRevision, AuthorizedSnapshot, AuthorizedSource, BodyKind, ContentDigest, Destination,
+-    Error, Intent, Journal, LocalAlias, OperationState, PublicationEligibility, Publisher,
+-    ReceiptCandidate, ReceiptEvidence, Recovery, Release,
++    Error, EvidenceOutput, Intent, Journal, LocalAlias, OperationState, PublicationEligibility,
++    Publisher, ReceiptCandidate, ReceiptEvidence, Recovery, Release,
+ };
+ 
+ const PAYLOAD: &[u8] = b"independently observed test payload";
+@@ -189,17 +189,25 @@ impl Evidence<'_> {
+ }
+ 
+ impl ReceiptEvidence for Evidence<'_> {
+-    fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
++    fn published_bytes(
++        &self,
++        _: &Intent,
++        _: &ReceiptCandidate,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
+         if let Some(directory) = self.pause_at {
+             park(directory);
+         }
+-        Ok(self.bytes.to_vec())
++        out.append(self.bytes)
+     }
+ 
+-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
+-        self.ipfs
+-            .map(<[u8]>::to_vec)
+-            .ok_or(Error::ExternalUnavailable)
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &Cid,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        out.append(self.ipfs.ok_or(Error::ExternalUnavailable)?)
+     }
+ }
+ 
+@@ -858,3 +866,9 @@ fn sigkill_after_dispatch_claim_and_confirmation_preserves_integrity() {
+         );
+     }
+ }
++
++#[path = "int07_26/mod.rs"]
++mod hardening;
++
++#[path = "int07_26/pinned_regressions.rs"]
++mod pinned_regressions;
+diff --git a/integrations/zos-int07-core/tests/int07_26/mod.rs b/integrations/zos-int07-core/tests/int07_26/mod.rs
+new file mode 100644
+index 0000000..d4ed4d6
+--- /dev/null
++++ b/integrations/zos-int07-core/tests/int07_26/mod.rs
+@@ -0,0 +1,460 @@
++// SPDX-License-Identifier: Apache-2.0
++//! Defensive regressions. Database changes are fixtures in disposable SQLite files.
++
++use super::{
++    pinned_regressions::{cid, paused_provider, publish_fixture},
++    *,
++};
++use std::{sync::RwLock, time::Instant};
++use zos_int07_core::{DurableRetry, MAX_PUBLICATION_BYTES};
++
++#[test]
++fn corrupted_receipt_and_schema_fail_closed_and_schema_rejects_inconsistent_rows() {
++    let intent = intent();
++    let scratch = Scratch::new();
++    publish_fixture(&scratch, &intent, None);
++    let connection = Connection::open(scratch.journal_path()).unwrap();
++    for remote in ["\n".to_string(), "é".repeat(257)] {
++        assert_eq!(
++            connection
++                .execute("UPDATE publication SET remote_id = ?1", [&remote])
++                .unwrap(),
++            1
++        );
++        assert!(matches!(
++            scratch.journal().state(&intent),
++            Err(Error::JournalConflict)
++        ));
++    }
++    for inconsistent in [
++        "UPDATE publication SET remote_id = NULL",
++        "UPDATE publication SET state = 'UNRECOGNIZED'",
++        "UPDATE publication SET state = 'PREPARED'",
++    ] {
++        let error = connection.execute(inconsistent, []).unwrap_err();
++        assert_eq!(
++            error.sqlite_error_code(),
++            Some(ErrorCode::ConstraintViolation)
++        );
++    }
++    connection.pragma_update(None, "user_version", 99).unwrap();
++    assert!(matches!(
++        Journal::open(scratch.journal_path()),
++        Err(Error::JournalConflict)
++    ));
++}
++
++#[test]
++fn publication_budget_rejects_oversize_before_journaling_and_accepts_exact_limit() {
++    for size in [MAX_PUBLICATION_BYTES, MAX_PUBLICATION_BYTES + 1] {
++        let body = vec![0x61; size];
++        let revision = ArtifactRevision {
++            digest: ContentDigest::of(&body),
++            ..revision()
++        };
++        let intent = Intent::new(revision.clone(), DESTINATION.into()).unwrap();
++        let source = Source {
++            revision,
++            release: Release::ExplicitlyPublic,
++            body,
++        };
++        let provider = Provider {
++            submission: Some(receipt(&intent)),
++            ..Provider::default()
++        };
++        let evidence = Evidence {
++            bytes: &source.body,
++            ..Evidence::VALID
++        };
++        let scratch = Scratch::new();
++        let mut journal = scratch.journal();
++        let result = publisher(&source, &ReleaseRule(intent.clone()), &provider, &evidence)
++            .execute(&mut journal, &Grant::CURRENT, &intent, Recovery::LookupOnly);
++        if size == MAX_PUBLICATION_BYTES {
++            assert!(matches!(result, Ok(OperationState::Confirmed(_))));
++            assert_eq!(provider.submits.load(SeqCst), 1);
++        } else {
++            assert!(matches!(result, Err(Error::ResourceLimit)));
++            assert_eq!(journal.state(&intent).unwrap(), None);
++            assert_eq!(provider.submits.load(SeqCst), 0);
++        }
++    }
++}
++
++struct OversizedEvidence {
++    ipfs: bool,
++}
++
++fn stream_beyond_limit(out: &mut dyn EvidenceOutput) -> Result<(), Error> {
++    let block = [0_u8; 4096];
++    for _ in 0..MAX_PUBLICATION_BYTES / block.len() {
++        out.append(&block)?;
++    }
++    assert_eq!(out.remaining(), 0);
++    assert!(matches!(out.append(b"x"), Err(Error::ResourceLimit)));
++    // Intentionally drop the fixture's append error to exercise the sticky bound.
++    Ok(())
++}
++
++impl ReceiptEvidence for OversizedEvidence {
++    fn published_bytes(
++        &self,
++        _: &Intent,
++        _: &ReceiptCandidate,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        if self.ipfs {
++            out.append(PAYLOAD)
++        } else {
++            stream_beyond_limit(out)
++        }
++    }
++
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &Cid,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        assert!(self.ipfs);
++        stream_beyond_limit(out)
++    }
++}
++
++#[test]
++fn oversized_readback_cannot_confirm_even_if_adapter_ignores_the_budget_error() {
++    let intent = intent();
++    for ipfs in [false, true] {
++        let scratch = Scratch::new();
++        let mut journal = scratch.journal();
++        let mut candidate = receipt(&intent);
++        candidate.ipfs_cid = ipfs.then(|| cid(0x55, 0x12, &intent.artifact().digest.0));
++        let caller = Publisher {
++            source: &Source::default(),
++            eligibility: &ReleaseRule(intent.clone()),
++            destination: &Provider {
++                submission: Some(candidate),
++                ..Provider::default()
++            },
++            evidence: &OversizedEvidence { ipfs },
++        };
++        assert!(matches!(
++            caller.execute(&mut journal, &Grant::CURRENT, &intent, Recovery::LookupOnly),
++            Err(Error::ResourceLimit)
++        ));
++        assert_eq!(
++            journal.state(&intent).unwrap(),
++            Some(OperationState::Unresolved)
++        );
++    }
++}
++
++struct TestBlock {
++    body: &'static [u8],
++    links: &'static [usize],
++}
++
++struct WalkBudget {
++    nodes: usize,
++    depth: usize,
++    bytes: usize,
++    deadline: Instant,
++}
++
++fn visit_fixture(
++    blocks: &[TestBlock],
++    index: usize,
++    depth: usize,
++    budget: &mut WalkBudget,
++    out: &mut dyn EvidenceOutput,
++) -> Result<(), Error> {
++    if budget.nodes == 0 || depth > budget.depth || Instant::now() >= budget.deadline {
++        return Err(Error::ResourceLimit);
++    }
++    budget.nodes -= 1;
++    let block = blocks.get(index).ok_or(Error::ExternalUnavailable)?;
++    // Charge the fixture's one-byte link entries as well as its body bytes.
++    budget.bytes = budget
++        .bytes
++        .checked_sub(block.body.len() + block.links.len())
++        .ok_or(Error::ResourceLimit)?;
++    out.append(block.body)?;
++    for link in block.links {
++        visit_fixture(blocks, *link, depth + 1, budget, out)?;
++    }
++    Ok(())
++}
++
++#[derive(Clone, Copy)]
++struct SimulatedTraversal {
++    node_cap: usize,
++    depth_cap: usize,
++    byte_cap: usize,
++    expired: bool,
++    missing_leaf: bool,
++}
++
++impl ReceiptEvidence for SimulatedTraversal {
++    fn published_bytes(
++        &self,
++        _: &Intent,
++        _: &ReceiptCandidate,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        out.append(PAYLOAD)
++    }
++
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &Cid,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        let blocks = [
++            TestBlock {
++                body: &PAYLOAD[..5],
++                links: &[1],
++            },
++            TestBlock {
++                body: &PAYLOAD[5..],
++                links: &[],
++            },
++        ];
++        let blocks = if self.missing_leaf {
++            &blocks[..1]
++        } else {
++            &blocks
++        };
++        let now = Instant::now();
++        let mut budget = WalkBudget {
++            nodes: self.node_cap,
++            depth: self.depth_cap,
++            bytes: self.byte_cap,
++            deadline: if self.expired {
++                now
++            } else {
++                now + TEST_TIMEOUT
++            },
++        };
++        visit_fixture(blocks, 0, 0, &mut budget, out)
++    }
++}
++
++#[test]
++fn simulated_traversal_requires_complete_payload_and_bounds_work() {
++    let evidence = SimulatedTraversal {
++        node_cap: 2,
++        depth_cap: 1,
++        byte_cap: PAYLOAD.len() + 1,
++        expired: false,
++        missing_leaf: false,
++    };
++    let intent = intent();
++    let mut candidate = receipt(&intent);
++    candidate.ipfs_cid = Some(cid(0x70, 0x12, &ContentDigest::of(b"simulated DAG root").0));
++    let provider = Provider {
++        submission: Some(candidate),
++        ..Provider::default()
++    };
++    let execute = |journal: &mut Journal, evidence: &SimulatedTraversal| {
++        Publisher {
++            source: &Source::default(),
++            eligibility: &ReleaseRule(intent.clone()),
++            destination: &provider,
++            evidence,
++        }
++        .execute(journal, &Grant::CURRENT, &intent, Recovery::LookupOnly)
++    };
++    assert!(matches!(
++        execute(&mut Scratch::new().journal(), &evidence),
++        Ok(OperationState::Confirmed(_))
++    ));
++
++    for over_budget in [
++        SimulatedTraversal {
++            node_cap: 1,
++            ..evidence
++        },
++        SimulatedTraversal {
++            depth_cap: 0,
++            ..evidence
++        },
++        SimulatedTraversal {
++            byte_cap: PAYLOAD.len(),
++            ..evidence
++        },
++        SimulatedTraversal {
++            expired: true,
++            ..evidence
++        },
++        SimulatedTraversal {
++            missing_leaf: true,
++            ..evidence
++        },
++    ] {
++        let scratch = Scratch::new();
++        let mut journal = scratch.journal();
++        let result = execute(&mut journal, &over_budget);
++        if over_budget.missing_leaf {
++            assert!(matches!(result, Err(Error::ExternalUnavailable)));
++        } else {
++            assert!(matches!(result, Err(Error::ResourceLimit)));
++        }
++        assert_eq!(
++            journal.state(&intent).unwrap(),
++            Some(OperationState::Unresolved)
++        );
++    }
++}
++
++struct LeasedSource {
++    approved: RwLock<bool>,
++    source: Source,
++}
++
++impl AuthorizedSource for LeasedSource {
++    type Principal = Grant<'static>;
++    fn with_revision<T>(
++        &self,
++        grant: &Self::Principal,
++        requested: &ArtifactRevision,
++        run: impl FnOnce(AuthorizedSnapshot<'_>) -> Result<T, Error>,
++    ) -> Result<T, Error> {
++        let release = self.approved.read().map_err(|_| Error::SourceUnavailable)?;
++        if !*release {
++            return Err(Error::Ineligible);
++        }
++        self.source.with_revision(grant, requested, run)
++    }
++}
++
++#[test]
++fn release_lease_serializes_revocation_with_dispatch_and_confirmation() {
++    let intent = intent();
++    let scratch = Scratch::new();
++    let source = LeasedSource {
++        approved: RwLock::new(true),
++        source: Source::default(),
++    };
++    let (provider, started, release) = paused_provider(&intent);
++    let caller = Publisher {
++        source: &source,
++        eligibility: &ReleaseRule(intent.clone()),
++        destination: &provider,
++        evidence: &Evidence::VALID,
++    };
++    std::thread::scope(|scope| {
++        let first = scope.spawn(|| {
++            caller.execute(
++                &mut scratch.journal(),
++                &Grant::CURRENT,
++                &intent,
++                Recovery::LookupOnly,
++            )
++        });
++        started.recv_timeout(TEST_TIMEOUT).unwrap();
++        assert!(matches!(
++            source.approved.try_write(),
++            Err(std::sync::TryLockError::WouldBlock)
++        ));
++        release.send(()).unwrap();
++        assert!(matches!(
++            first.join().unwrap(),
++            Ok(OperationState::Confirmed(_))
++        ));
++    });
++    *source.approved.write().unwrap() = false;
++    assert!(matches!(
++        caller.execute(
++            &mut scratch.journal(),
++            &Grant::CURRENT,
++            &intent,
++            Recovery::LookupOnly
++        ),
++        Err(Error::Ineligible)
++    ));
++    assert_eq!(provider.submits.load(SeqCst), 1);
++}
++
++struct OtherCapability {
++    id: &'static str,
++    retries: AtomicUsize,
++}
++
++impl Destination for OtherCapability {
++    fn id(&self) -> &str {
++        self.id
++    }
++    fn submit(&self, _: &Intent, _: &[u8]) -> Result<ReceiptCandidate, Error> {
++        Err(Error::ExternalUnavailable)
++    }
++    fn lookup(&self, _: &Intent) -> Result<Option<ReceiptCandidate>, Error> {
++        Ok(None)
++    }
++}
++impl DurableRetry for OtherCapability {
++    fn retry_idempotently(&self, _: &Intent, _: &[u8]) -> Result<Option<ReceiptCandidate>, Error> {
++        self.retries.fetch_add(1, SeqCst);
++        Ok(None)
++    }
++}
++
++struct Misbound<'a> {
++    capability: &'a OtherCapability,
++    provider: Provider,
++}
++
++impl Destination for Misbound<'_> {
++    fn id(&self) -> &str {
++        self.provider.id()
++    }
++    fn submit(&self, intent: &Intent, bytes: &[u8]) -> Result<ReceiptCandidate, Error> {
++        self.provider.submit(intent, bytes)
++    }
++    fn lookup(&self, intent: &Intent) -> Result<Option<ReceiptCandidate>, Error> {
++        self.provider.lookup(intent)
++    }
++    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
++        Some(self.capability)
++    }
++}
++
++#[test]
++fn unrelated_capability_does_not_grant_retry_even_with_same_label() {
++    let scratch = Scratch::new();
++    let intent = intent();
++    let capability = OtherCapability {
++        id: DESTINATION,
++        retries: AtomicUsize::new(0),
++    };
++    let provider = Misbound {
++        capability: &capability,
++        provider: Provider::default(),
++    };
++    let caller = Publisher {
++        source: &Source::default(),
++        eligibility: &ReleaseRule(intent.clone()),
++        destination: &provider,
++        evidence: &Evidence::VALID,
++    };
++    let mut journal = scratch.journal();
++    assert!(matches!(
++        caller.execute(&mut journal, &Grant::CURRENT, &intent, Recovery::LookupOnly),
++        Err(Error::ExternalUnavailable)
++    ));
++    assert!(matches!(
++        caller.execute(
++            &mut journal,
++            &Grant::CURRENT,
++            &intent,
++            Recovery::RetryIdempotently
++        ),
++        Err(Error::InvalidBinding)
++    ));
++    assert_eq!(capability.retries.load(SeqCst), 0);
++    assert_eq!(provider.provider.submits.load(SeqCst), 1);
++    assert_eq!(
++        journal.state(&intent).unwrap(),
++        Some(OperationState::Unresolved)
++    );
++}
+diff --git a/integrations/zos-int07-core/tests/int07_26/pinned_regressions.rs b/integrations/zos-int07-core/tests/int07_26/pinned_regressions.rs
+new file mode 100644
+index 0000000..a59ffb2
+--- /dev/null
++++ b/integrations/zos-int07-core/tests/int07_26/pinned_regressions.rs
+@@ -0,0 +1,151 @@
++// SPDX-License-Identifier: Apache-2.0
++//! Portable defensive regressions for both the pinned and hardened crate.
++
++use super::*;
++
++pub(super) fn publish_fixture(
++    scratch: &Scratch,
++    intent: &Intent,
++    ipfs_cid: Option<String>,
++) -> OperationState {
++    let mut candidate = receipt(intent);
++    candidate.ipfs_cid = ipfs_cid;
++    let provider = Provider {
++        submission: Some(candidate),
++        ..Provider::default()
++    };
++    let evidence = Evidence {
++        ipfs: Some(PAYLOAD),
++        ..Evidence::VALID
++    };
++    publisher(
++        &Source::default(),
++        &ReleaseRule(intent.clone()),
++        &provider,
++        &evidence,
++    )
++    .execute(
++        &mut scratch.journal(),
++        &Grant::CURRENT,
++        intent,
++        Recovery::LookupOnly,
++    )
++    .unwrap()
++}
++
++pub(super) fn cid(codec: u64, hash: u64, digest: &[u8]) -> String {
++    Cid::new_v1(codec, Multihash::wrap(hash, digest).unwrap()).to_string()
++}
++
++#[test]
++fn restored_cid_uses_same_canonical_shape_and_raw_digest_as_live_evidence() {
++    let intent = intent();
++    let digest = intent.artifact().digest.0;
++    let valid = cid(0x55, 0x12, &digest);
++    let cases = [
++        cid(0x71, 0x12, &digest),
++        "malformed".into(),
++        "x".repeat(257),
++        format!("/ipfs/{valid}"),
++        cid(0x70, 0x13, &digest),
++        cid(0x70, 0x12, &digest[..31]),
++        cid(0x55, 0x12, &ContentDigest::of(b"different").0),
++    ];
++    let scratch = Scratch::new();
++    let confirmed = publish_fixture(&scratch, &intent, Some(valid.clone()));
++    assert_eq!(scratch.journal().state(&intent).unwrap(), Some(confirmed));
++    let raw = Connection::open(scratch.journal_path()).unwrap();
++
++    for invalid in cases {
++        assert_eq!(
++            raw.execute("UPDATE publication SET ipfs_cid = ?1", [&invalid])
++                .unwrap(),
++            1
++        );
++        let mut restored = scratch.journal();
++        assert!(
++            matches!(restored.state(&intent), Err(Error::JournalConflict)),
++            "{invalid}"
++        );
++        let provider = Provider::default();
++        assert!(matches!(
++            publisher(
++                &Source::default(),
++                &ReleaseRule(intent.clone()),
++                &provider,
++                &Evidence::VALID
++            )
++            .execute(
++                &mut restored,
++                &Grant::CURRENT,
++                &intent,
++                Recovery::RetryIdempotently
++            ),
++            Err(Error::JournalConflict)
++        ));
++        assert_eq!(provider.submits.load(SeqCst), 0);
++        assert_eq!(provider.lookups.load(SeqCst), 0);
++    }
++}
++
++pub(super) fn paused_provider(intent: &Intent) -> (Provider, Receiver<()>, SyncSender<()>) {
++    let (entered, started) = sync_channel(1);
++    let (release, resume) = sync_channel(1);
++    let provider = Provider {
++        submission: Some(receipt(intent)),
++        gate: Some(DispatchGate {
++            entered,
++            resume: Mutex::new(resume),
++        }),
++        ..Provider::default()
++    };
++    (provider, started, release)
++}
++
++#[test]
++fn policy_revoked_in_flight_prevents_confirmation_without_automatic_retry() {
++    let scratch = Scratch::new();
++    let intent = intent();
++    let source = Source::default();
++    let policy = RevocablePolicy {
++        intent: intent.clone(),
++        approved: AtomicBool::new(true),
++    };
++    let (provider, started, release) = paused_provider(&intent);
++    let caller = Publisher {
++        source: &source,
++        eligibility: &policy,
++        destination: &provider,
++        evidence: &Evidence::VALID,
++    };
++    std::thread::scope(|scope| {
++        let first = scope.spawn(|| {
++            caller.execute(
++                &mut scratch.journal(),
++                &Grant::CURRENT,
++                &intent,
++                Recovery::LookupOnly,
++            )
++        });
++        started.recv_timeout(TEST_TIMEOUT).unwrap();
++        policy.approved.store(false, SeqCst);
++        release.send(()).unwrap();
++        assert!(matches!(first.join().unwrap(), Err(Error::Ineligible)));
++    });
++    let mut reopened = scratch.journal();
++    assert_eq!(
++        reopened.state(&intent).unwrap(),
++        Some(OperationState::Unresolved)
++    );
++    assert!(matches!(
++        caller.execute(
++            &mut reopened,
++            &Grant::CURRENT,
++            &intent,
++            Recovery::RetryIdempotently
++        ),
++        Err(Error::Ineligible)
++    ));
++    assert_eq!(provider.submits.load(SeqCst), 1);
++    assert_eq!(provider.lookups.load(SeqCst), 0);
++}
+diff --git a/integrations/zos-int07-core/tests/publication.rs b/integrations/zos-int07-core/tests/publication.rs
+index 31e9850..1e8d226 100644
+--- a/integrations/zos-int07-core/tests/publication.rs
++++ b/integrations/zos-int07-core/tests/publication.rs
+@@ -141,6 +141,12 @@ impl Destination for Remote {
+         Ok(self.receipt.lock().unwrap().clone())
+     }
+ 
++    fn durable_retry(&self) -> Option<&dyn DurableRetry> {
++        Some(self)
++    }
++}
++
++impl DurableRetry for Remote {
+     fn retry_idempotently(
+         &self,
+         intent: &Intent,
+@@ -170,13 +176,21 @@ struct Evidence {
+     ipfs: Option<&'static [u8]>,
+ }
+ impl ReceiptEvidence for Evidence {
+-    fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+-        self.published
+-            .map(<[u8]>::to_vec)
+-            .ok_or(Error::InvalidReceipt)
++    fn published_bytes(
++        &self,
++        _: &Intent,
++        _: &ReceiptCandidate,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        out.append(self.published.ok_or(Error::InvalidReceipt)?)
+     }
+-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
+-        self.ipfs.map(<[u8]>::to_vec).ok_or(Error::InvalidReceipt)
++    fn verified_ipfs_bytes(
++        &self,
++        _: &Intent,
++        _: &Cid,
++        out: &mut dyn EvidenceOutput,
++    ) -> Result<(), Error> {
++        out.append(self.ipfs.ok_or(Error::InvalidReceipt)?)
+     }
+ }
+ const EVIDENCE: Evidence = Evidence {

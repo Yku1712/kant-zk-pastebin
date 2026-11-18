@@ -15,8 +15,8 @@ use std::{
 };
 use zos_int07_core::{
     ArtifactRevision, AuthorizedSnapshot, AuthorizedSource, BodyKind, ContentDigest, Destination,
-    Error, Intent, Journal, LocalAlias, OperationState, PublicationEligibility, Publisher,
-    ReceiptCandidate, ReceiptEvidence, Recovery, Release,
+    Error, EvidenceOutput, Intent, Journal, LocalAlias, OperationState, PublicationEligibility,
+    Publisher, ReceiptCandidate, ReceiptEvidence, Recovery, Release,
 };
 
 const PAYLOAD: &[u8] = b"independently observed test payload";
@@ -189,17 +189,25 @@ impl Evidence<'_> {
 }
 
 impl ReceiptEvidence for Evidence<'_> {
-    fn published_bytes(&self, _: &Intent, _: &ReceiptCandidate) -> Result<Vec<u8>, Error> {
+    fn published_bytes(
+        &self,
+        _: &Intent,
+        _: &ReceiptCandidate,
+        out: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
         if let Some(directory) = self.pause_at {
             park(directory);
         }
-        Ok(self.bytes.to_vec())
+        out.append(self.bytes)
     }
 
-    fn verified_ipfs_bytes(&self, _: &Intent, _: &Cid) -> Result<Vec<u8>, Error> {
-        self.ipfs
-            .map(<[u8]>::to_vec)
-            .ok_or(Error::ExternalUnavailable)
+    fn verified_ipfs_bytes(
+        &self,
+        _: &Intent,
+        _: &Cid,
+        out: &mut dyn EvidenceOutput,
+    ) -> Result<(), Error> {
+        out.append(self.ipfs.ok_or(Error::ExternalUnavailable)?)
     }
 }
 
@@ -858,3 +866,9 @@ fn sigkill_after_dispatch_claim_and_confirmation_preserves_integrity() {
         );
     }
 }
+
+#[path = "int07_26/mod.rs"]
+mod hardening;
+
+#[path = "int07_26/pinned_regressions.rs"]
+mod pinned_regressions;
