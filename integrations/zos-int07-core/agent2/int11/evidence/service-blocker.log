@@ -1,0 +1,16 @@
+
+$ git rev-parse HEAD
+ec90d56a74dbd0810fcd4849f42633386a4207f7
+[exit 0]
+
+$ sha256sum src/ipfs.rs Cargo.lock
+fa26cf8b2ccdd2aeabe3324efc1ccacd8d13becf660d7b743eb62e16182c9b3e  src/ipfs.rs
+ea2b48d73f498eb0d47d78c77519c6105ea02e93238b7dd698ae3693b40bdf1a  Cargo.lock
+[exit 0]
+
+$ cargo check --locked --offline --bin kant-pastebin
+error: no matching package named `actix-files` found
+location searched: crates.io index
+required by package `kant-pastebin v0.1.0 (/workspace/work/int11/repo)`
+As a reminder, you're using offline mode (--offline) which can sometimes cause surprising resolution failures, if this error is too confusing you may wish to retry without `--offline`.
+[exit 101]

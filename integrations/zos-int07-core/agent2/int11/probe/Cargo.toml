@@ -1,0 +1,21 @@
+[package]
+name = "pastebin-writer-probe"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[features]
+patched-writer = ["dep:tempfile"]
+
+[dependencies]
+data-encoding = "=2.11.0"
+ipld-core = "=0.4.3"
+ipld-dagpb = "=0.2.2"
+log = "=0.4.33"
+quick-protobuf = "=0.8.1"
+rust-unixfs = "=0.5.1"
+tempfile = { version = "=3.27.0", optional = true }
