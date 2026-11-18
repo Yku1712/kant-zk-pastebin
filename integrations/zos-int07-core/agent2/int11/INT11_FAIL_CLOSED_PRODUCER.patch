@@ -1,0 +1,114 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index ed0f916..6441b9d 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -43,11 +43,12 @@ bzip2 = "0.5"
+ xz2 = "0.1"
+ zip = { version = "2", default-features = false, features = ["deflate"] }
+ 
++tempfile = "3"
++
+ [dev-dependencies]
+ chromiumoxide = "0.7"
+ futures = "0.3"
+ tokio = { version = "1", features = ["full"] }
+-tempfile = "3"
+ 
+ [[bin]]
+ name = "kant-pastebin"
+diff --git a/src/ipfs.rs b/src/ipfs.rs
+index 220b323..b362357 100644
+--- a/src/ipfs.rs
++++ b/src/ipfs.rs
+@@ -61,53 +61,53 @@ fn ipfs_repo() -> Option<String> {
+ /// Block path: `{repo}/blocks/{shard}/{key}.data`
+ /// - `key` = base32upper(multihash)
+ /// - `shard` = next-to-last 2 characters of `key` (go-ipfs sharding scheme)
+-fn write_block(cid: &impl std::fmt::Display, block: &[u8]) {
+-    let Some(repo) = ipfs_repo() else { return };
+-    // Parse the CID string with our local Cid type to extract multihash bytes
+-    let cid_str = cid.to_string();
+-    let local_cid: Cid = match cid_str.parse() {
+-        Ok(c) => c,
+-        Err(_) => return,
+-    };
+-    let mh_bytes = local_cid.hash().to_bytes();
+-    let key = data_encoding::BASE32_NOPAD.encode(&mh_bytes);
+-    let shard = if key.len() >= 3 {
+-        &key[key.len() - 3..key.len() - 1]
+-    } else {
+-        "AA"
+-    };
+-    let dir = format!("{}/blocks/{}", repo, shard);
+-    std::fs::create_dir_all(&dir).ok();
+-    let path = format!("{}/{}.data", dir, key);
+-    if std::fs::write(&path, block).is_ok() {
+-        log::info!("📦 IPFS block: {}", path);
+-    }
++fn write_block(
++    repo: &std::path::Path,
++    cid: &impl std::fmt::Display,
++    block: &[u8],
++) -> std::io::Result<()> {
++    use std::io::{Error, ErrorKind, Write};
++
++    let local_cid: Cid = cid
++        .to_string()
++        .parse()
++        .map_err(|error| Error::new(ErrorKind::InvalidData, error))?;
++    let key = data_encoding::BASE32_NOPAD.encode(&local_cid.hash().to_bytes());
++    let shard = key
++        .len()
++        .checked_sub(3)
++        .map_or("AA", |start| &key[start..start + 2]);
++    let dir = repo.join("blocks").join(shard);
++    std::fs::create_dir_all(&dir)?;
++
++    // Publish a completed block at the flatfs name in one rename.
++    let path = dir.join(format!("{key}.data"));
++    let mut temp = tempfile::NamedTempFile::new_in(&dir)?;
++    temp.write_all(block)?;
++    temp.persist(&path).map_err(|error| error.error)?;
++    log::info!("📦 IPFS block: {}", path.display());
++    Ok(())
+ }
+ 
+-/// Add content to IPFS via pure Rust. Encodes as UnixFS dag-pb blocks using
+-/// [`FileAdder`], writes each block to the local flatfs store, and returns
+-/// the root CID (CIDv0 `Qm...` string).
+-///
+-/// For files under 256KB (default chunk size), produces a single leaf block.
+-/// Larger files are chunked into a balanced Merkle DAG automatically.
+-pub fn ipfs_add_bytes(data: &[u8]) -> Option<String> {
++/// Store a complete UnixFS DAG in the configured local flatfs repository.
++pub fn ipfs_add_bytes(mut data: &[u8]) -> Option<String> {
++    let repo = ipfs_repo()?;
++    let repo = std::path::Path::new(&repo);
+     let mut adder = FileAdder::default();
+     let mut root_cid = None;
+-
+-    let (blocks, consumed) = adder.push(data);
+-    for (cid, block) in blocks {
+-        write_block(&cid, &block);
+-        root_cid = Some(cid);
+-    }
+-    if consumed < data.len() {
+-        let (blocks, _) = adder.push(&data[consumed..]);
++    while !data.is_empty() {
++        let (blocks, consumed) = adder.push(data);
++        if consumed == 0 || consumed > data.len() {
++            return None;
++        }
+         for (cid, block) in blocks {
+-            write_block(&cid, &block);
++            write_block(repo, &cid, &block).ok()?;
+             root_cid = Some(cid);
+         }
++        data = &data[consumed..];
+     }
+     for (cid, block) in adder.finish() {
+-        write_block(&cid, &block);
++        write_block(repo, &cid, &block).ok()?;
+         root_cid = Some(cid);
+     }
+ 

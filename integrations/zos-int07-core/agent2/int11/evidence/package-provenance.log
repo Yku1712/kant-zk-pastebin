@@ -1,0 +1,31 @@
+Pinned source identity
+ec90d56a74dbd0810fcd4849f42633386a4207f7
+fa26cf8b2ccdd2aeabe3324efc1ccacd8d13becf660d7b743eb62e16182c9b3e  ../../../../src/ipfs.rs
+ea2b48d73f498eb0d47d78c77519c6105ea02e93238b7dd698ae3693b40bdf1a  ../../../../Cargo.lock
+
+Public Cargo package archive identities
+1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33  bytes-1.11.1.crate  LOCK AND ARCHIVE MATCH
+21a304f95f84d169a6f31c4d0a30d784643aaa0bbc9c1e449a2c23e963ec4971  cid-0.11.3.crate  LOCK AND ARCHIVE MATCH
+a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8  data-encoding-2.11.0.crate  LOCK AND ARCHIVE MATCH
+91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e  either-1.16.0.crate  LOCK AND ARCHIVE MATCH
+5c287a33c7f0a620c38e641e7f60827713987b3c0f26e8ddc9462cc69cf75759  filetime-0.2.29.crate  LOCK AND ARCHIVE MATCH
+090f624976d72f0b0bb71b86d58dc16c15e069193067cb3a3a09d655246cbbda  ipld-core-0.4.3.crate  LOCK AND ARCHIVE MATCH
+0e51fc90b345e57d8d5346dcef5eb16d51d1d19572a8a2d23c15009904e68244  ipld-dagpb-0.2.2.crate  LOCK AND ARCHIVE MATCH
+0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad  log-0.4.33.crate  LOCK AND ARCHIVE MATCH
+577c63b00ad74d57e8c9aa870b5fccebf2fd64a308a5aee9f1bb88e4aea19447  multihash-0.19.5.crate  LOCK AND ARCHIVE MATCH
+60384411b100398c5b2fdca476eed82e9898d09f2c60d1b1b66c5080ebe06118  multihash-codetable-0.2.2.crate  LOCK AND ARCHIVE MATCH
+4723acdce756db211a53f01b3419dbdf63cb48cef5df86260f55309364735fbf  multihash-derive-0.9.3.crate  LOCK AND ARCHIVE MATCH
+f932556f78452e5604cef711349d337ec081a9aa3c96e67b3127c8f5df05d550  multihash-derive-impl-0.1.3.crate  LOCK AND ARCHIVE MATCH
+9d6da84cc204722a989e01ba2f6e1e276e190f22263d0cb6ce8526fcdb0d2e1f  quick-protobuf-0.8.1.crate  LOCK AND ARCHIVE MATCH
+c6d3eadb39df5a598445aca058dd00217c96f7e2311c45c53388164fc42d11fb  rust-unixfs-0.5.1.crate  LOCK AND ARCHIVE MATCH
+a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283  sha2-0.10.9.crate  LOCK AND ARCHIVE MATCH
+446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4  sha2-0.11.0.crate  LOCK AND ARCHIVE MATCH
+Other active probe packages with differing versions or checksums: cfg-if 1.0.5, cpufeatures 0.3.1, equivalent 1.0.3, hybrid-array 0.4.15, indexmap 2.14.2, libc 0.2.191, match-lookup 0.1.3, toml_datetime 1.1.3+spec-1.1.0, toml_edit 0.25.19+spec-1.1.0, toml_parser 1.1.5+spec-1.1.0, unicode-ident 1.0.27, winnow 1.0.5
+
+Extracted rust-unixfs publisher VCS information
+{
+  "git": {
+    "sha1": "eae2225b89bddf6518d1647387a5695e5d0da1f0"
+  },
+  "path_in_vcs": "unixfs"
+}
